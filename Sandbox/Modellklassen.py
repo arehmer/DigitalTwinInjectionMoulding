@@ -7,10 +7,7 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.close('all')
-
-
-    
+   
 
 
 class Arburg320C():
@@ -24,6 +21,8 @@ class Arburg320C():
         self.NumStates = None
         
         self.Maschinenparameter = {}
+        self.MaschinenparameterConstr = {}
+        
         self.Führungsgrößen = {}
         
         self.ModelParamEinspritz = {}
@@ -66,3 +65,4 @@ class Arburg320C():
         self.opti_params = Parameter
         
         return None
+

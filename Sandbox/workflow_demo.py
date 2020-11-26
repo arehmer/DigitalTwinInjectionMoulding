@@ -8,7 +8,7 @@ import numpy as np
 
 from Modellklassen import Arburg320C
 from OptimizationTools import MultiStageOptimization
-
+from miscellaneous import *
 
 Maschine = Arburg320C()
 
@@ -19,9 +19,11 @@ h2 = 2
 T1 = 35
 p1 = 10
 
-Maschine.Maschinenparameter = {'h1': h1, 'h2': h2, 'T1': T1, 'p1':10}
+Maschine.Maschinenparameter = {'h1': h1, 'h2': h2, 'T1': T1}#, 'p1':10}
 # Maschine.Führungsgrößen = {'U1': lambda h1,h2,k: h1+h2*tanh(2*(k+T1))}
 Maschine.Führungsgrößen = {'U1': lambda param,k: param['h1']+(param['h2']-param['h1'])/(1+exp(-2*(k-param['T1'])))}
+# Maschine.MaschinenparameterConstr = {'h1':}
+
 
 Maschine.NumStates = 1
 
@@ -45,14 +47,15 @@ reference['Umschaltpunkt'] = 40
 reference['N'] = 60
 reference['data'] = sin(np.linspace(0,3/2*np.pi,N))
 
-sol = MultiStageOptimization(Maschine,reference)
+values = MultiStageOptimization(Maschine,reference)
 
 
 
-# Postprocess Results
-# Usol_MS = sol.value(U) # should be [-2.7038;-0.5430;0.2613;0.5840]
+''' Ein Postprocessing bei dem die ermittelten Parameter, die damit verbundenen 
+Kosten und der Verlauf über die Zeit angezeigt wird ?'''
 
-# plt.plot(Usol_MS)
+
+
 
 
 

@@ -13,8 +13,11 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
+from miscellaneous import *
 
-def MultiStageOptimization(model,reference):
+
+
+def MultiStageOptimization(model,ref):
 
     # Specify Dimensions
     N1 = 40
@@ -34,11 +37,11 @@ def MultiStageOptimization(model,reference):
         
     
     # Initial Constraints
-    opti.subject_to(X[0]==reference['data'][0])
+    opti.subject_to(X[0]==ref['data'][0])
     
     
     # System Dynamics as Path Constraints
-    for k in range(reference['N']-1):
+    for k in range(ref['N']-1):
         
         if k<=N1:
             opti.subject_to(model.Einspritzphase(X[k],model.ControlInput(opti,k))==X[k+1])
@@ -46,25 +49,24 @@ def MultiStageOptimization(model,reference):
             opti.subject_to(model.Nachdruckphase(X[k],model.ControlInput(opti,k))==X[k+1])
     
     # Final constraint
-    opti.subject_to(X[-1]==reference['data'][-1])
-
+    opti.subject_to(X[-1]==ref['data'][-1])
+    
+    
+    # Constraints on parameters if any 
+    
+    
     # Define Loss Function    
-    opti.minimize(sumsqr(X-reference['data']))
+    opti.minimize(sumsqr(X-ref['data']))
     
     #Choose solver
     opti.solver('ipopt')
     
+    # Get solution
     sol = opti.solve()
     
-    Xsol_MS = sol.value(X) # should be [-2.7038;-0.5430;0.2613;0.5840]
-    # print(Usol_MS)
+    # Extract real values from solution
+    values = OptimValues_to_dict(model.opti_params,sol)
+    values['X'] = sol.value(X)
+
     
-    opti_MS = opti
-    # U_MS = U
-    # sol_MS = sol
-        
-    plt.figure()
-    plt.plot(reference['data'])
-    plt.plot(Xsol_MS)
-    
-    return sol
+    return values
