@@ -6,78 +6,10 @@ Created on Tue Nov 24 13:25:16 2020
 @author: alexander
 """
 
-from casadi import *
-import matplotlib.pyplot as plt
-import numpy as np
-
-plt.close('all')
-
-
-    
-
-
-class Arburg320C():
-    """
-    GRUCell in Reihe mit einem Linearen Zustandsraummodell
-    
-    """
-
-    def __init__(self):
-        
-        self.Maschinenparameter = {}
-        self.Führungsgrößen = {}
-        
-        self.ModelParamEinspritz = {}
-        self.ModelParamNachdruck = {}
-
-        self.opti_params = None
-        
-    def Einspritzphase(self,x,u):
-        # Modell Einspritzphase
-        x_new = 0.9*x+u                                                         # replace with actual model
-        return x_new
-        
-    def Nachdruckphase(self,x,u):
-        # Modell Nachdruckphase
-        x_new = 0.9*x+u                                                         # replace with actual model
-        return x_new
-
-    def ControlInput(self,opti,k):
-        # Übersetzt Führungsgrößen in optimierbare control inputs
-        
-        control = []
-                
-        for key in self.Führungsgrößen.keys():
-            control.append(self.Führungsgrößen[key](self.opti_params,k))
-        
-        control = vcat(control)
-
-        return control
-        
-    def CreateOptimVariables(self,opti, param_dict):
-        
-        Parameter = {}
-    
-        for key in param_dict.keys():
-            Parameter[key] = opti.variable(1)
-    
-        self.opti_params = Parameter
-        
-        return None
 
 
 
-Maschine = Arburg320C()
 
-h1 = 1
-h2 = 2
-T1 = 35
-p1 = 10
-
-
-Maschine.Maschinenparameter = {'h1': h1, 'h2': h2, 'T1': T1, 'p1':10}
-# Maschine.Führungsgrößen = {'U1': lambda h1,h2,k: h1+h2*tanh(2*(k+T1))}
-Maschine.Führungsgrößen = {'U1': lambda param,k: param['h1']+(param['h2']-param['h1'])/(1+exp(-2*(k-param['T1'])))}
 
                            # 'U2': lambda param,k: param['p1']}
 
