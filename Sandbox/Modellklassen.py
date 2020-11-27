@@ -7,7 +7,7 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-   
+from miscellaneous import *
 
 
 class Arburg320C():
@@ -25,22 +25,44 @@ class Arburg320C():
         
         self.Führungsgrößen = {}
         
-        self.ModelParamEinspritz = {}
-        self.ModelParamNachdruck = {}
+        self.ModelParamsInject = {}
+        self.ModelParamsPress = {}
 
-        self.opti_params = None
+        self.opti_vars = None
         
-        self.ModelEinspritzphase = None
-        self.ModelNachdruckphase = None
+        self.ModelInject = None
+        self.ModelPress = None
         
-    def Einspritzphase(self,x,u):
+    def SimulateInject(self,x,u):
         # Modell Einspritzphase
-        x_new = 0.9*x+u                                                         # replace with actual model
+        
+        # Casadi Function needs list of parameters as input
+        params = []
+        
+        for name in  self.ModelInject.name_in():
+            try:
+                params.append(self.ModelParamsInject[name])                     # Parameters are already in the right order as expected by Casadi Function
+            except:
+                continue
+        
+        x_new = self.ModelInject(x,u,*params)                                  
+        
         return x_new
         
-    def Nachdruckphase(self,x,u):
+    def SimulatePress(self,x,u):
         # Modell Nachdruckphase
-        x_new = 0.9*x+u                                                         # replace with actual model
+        
+        # Casadi Function needs list of parameters as input
+        params = []
+        
+        for name in  self.ModelInject.name_in():
+            try:
+                params.append(self.ModelParamsInject[name])                     # Parameters are already in the right order as expected by Casadi Function
+            except:
+                continue
+        
+        x_new = self.ModelPress(x,u,*params)     
+                              
         return x_new
 
     def ControlInput(self,opti,k):
@@ -49,7 +71,7 @@ class Arburg320C():
         control = []
                 
         for key in self.Führungsgrößen.keys():
-            control.append(self.Führungsgrößen[key](self.opti_params,k))
+            control.append(self.Führungsgrößen[key](self.opti_vars,k))
         
         control = vcat(control)
 
@@ -60,9 +82,22 @@ class Arburg320C():
         Parameter = {}
     
         for key in param_dict.keys():
-            Parameter[key] = opti.variable(1)
+            
+            dim0 = param_dict[key].shape[0]
+            dim1 = param_dict[key].shape[1]
+            
+            Parameter[key] = opti.variable(dim0,dim1)
     
-        self.opti_params = Parameter
+        self.opti_vars = Parameter
         
         return None
+    
+        
+        
 
+
+
+
+    
+    
+    

@@ -18,7 +18,8 @@ from miscellaneous import *
 
 
 def MultiStageOptimization(model,ref):
-
+    #Multi State Optimization for solving the optimal control problem
+    
     # Specify Dimensions
     N1 = 40
     N2 = 20
@@ -35,7 +36,6 @@ def MultiStageOptimization(model,ref):
     # Create decision variables for states
     X = opti.variable(N,model.NumStates)
         
-    
     # Initial Constraints
     opti.subject_to(X[0]==ref['data'][0])
     
@@ -44,9 +44,9 @@ def MultiStageOptimization(model,ref):
     for k in range(ref['N']-1):
         
         if k<=N1:
-            opti.subject_to(model.Einspritzphase(X[k],model.ControlInput(opti,k))==X[k+1])
+            opti.subject_to(model.SimulateInject(X[k],model.ControlInput(opti,k))==X[k+1])
         else:
-            opti.subject_to(model.Nachdruckphase(X[k],model.ControlInput(opti,k))==X[k+1])
+            opti.subject_to(model.SimulatePress(X[k],model.ControlInput(opti,k))==X[k+1])
     
     # Final constraint
     opti.subject_to(X[-1]==ref['data'][-1])
@@ -65,8 +65,35 @@ def MultiStageOptimization(model,ref):
     sol = opti.solve()
     
     # Extract real values from solution
-    values = OptimValues_to_dict(model.opti_params,sol)
+    values = OptimValues_to_dict(model.opti_vars,sol)
     values['X'] = sol.value(X)
 
     
     return values
+
+
+def UpdateModel(model,input,output):
+    
+    # Make Model Parameters opti.variables
+    model.CreateOptimVariables(opti, model.ModelParamsInject)
+    
+    
+    # Save current model parameters
+    
+    
+    
+    return model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
