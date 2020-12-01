@@ -55,9 +55,9 @@ class Arburg320C():
         # Casadi Function needs list of parameters as input
         params = []
         
-        for name in  self.ModelInject.name_in():
+        for name in  self.ModelPress.name_in():
             try:
-                params.append(self.ModelParamsInject[name])                     # Parameters are already in the right order as expected by Casadi Function
+                params.append(self.ModelParamsPress[name])                     # Parameters are already in the right order as expected by Casadi Function
             except:
                 continue
         

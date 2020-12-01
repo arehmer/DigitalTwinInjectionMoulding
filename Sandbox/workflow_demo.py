@@ -59,13 +59,18 @@ x = np.zeros((N,1))
 u = np.random.normal(0,1,(N-1,1))
 
 for i in range(1,100):
-    x[i] = 0.7*x[i-1] + 0.8*u[i-1]
+    x[i] = 0.8*x[i-1] + u[i-1]
 
-u = [u,None]
-x = [x,None]
+# u = [u,None]
+# x = [x,None]
     
 ''' Reestimate Parameters if need be '''
-# model = UpdateModel(model,u,x)
+values = UpdateModelParams(model,u,x,'inject')
+
+
+
+''' Decide somehow if old values should be overwritten by new values'''
+
 
 ''' Solve Optimal Control Problem '''
 
@@ -74,12 +79,12 @@ x = [x,None]
 
 # Gebe Prozessgrößenverlauf als Referenztrajektorie vor und ermittle erforderliche Maschinenparameter
 N=60
+
 reference = {}
 reference['Umschaltpunkt'] = 40
-reference['N'] = 60
 reference['data'] = sin(np.linspace(0,3/2*np.pi,N))
 
-values = MultiStageOptimization(model,reference)
+# values = MultiStageOptimization(model,reference)
 
 
 
