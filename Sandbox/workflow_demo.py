@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from sys import path
-path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
+#path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 
 from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Modellklassen import Arburg320C
+from Modellklassen import InjectionMouldingMachine
 from OptimizationTools import *
 from miscellaneous import *
 
@@ -16,7 +16,7 @@ from miscellaneous import *
 
 
 ''' Setup '''
-model = Arburg320C()
+model = InjectionMouldingMachine()
 
 N=60
 
@@ -53,23 +53,26 @@ model.NumStates = 1
 ''' Everything from here on needs to run in a loop'''
 
 
+''' Reestimate Part Quality Model if need be '''
+
+
+
+
 ''' Gather Data from Last Shot '''
 N = 100;
 x = np.zeros((N,1))
 u = np.random.normal(0,1,(N-1,1))
 
 for i in range(1,100):
-    x[i] = 0.8*x[i-1] + u[i-1]
+    x[i] = 0.1*x[i-1] + u[i-1]
 
 # u = [u,None]
 # x = [x,None]
     
 ''' Reestimate Parameters if need be '''
-values = UpdateModelParams(model,u,x,'inject')
+values = UpdateModelParams(model.ModelInject,u,x,model.ModelParamsInject)
 
-
-
-''' Decide somehow if old values should be overwritten by new values'''
+' Decide somehow if old values should be overwritten by new values'''
 
 
 ''' Solve Optimal Control Problem '''
@@ -84,7 +87,7 @@ reference = {}
 reference['Umschaltpunkt'] = 40
 reference['data'] = sin(np.linspace(0,3/2*np.pi,N))
 
-# values = MultiStageOptimization(model,reference)
+values = MultiStageOptimization(model,reference)
 
 
 
