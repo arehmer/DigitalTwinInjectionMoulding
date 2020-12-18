@@ -12,8 +12,9 @@ from miscellaneous import *
 
 class InjectionMouldingMachine():
     """
-    
-    
+    Modell der Spritzgießmaschine, welches Führungsgrößen (parametriert durch 
+    an der Maschine einstellbare Größen) auf die resultierenden Prozessgrößen
+    abbildet.    
     """
 
     def __init__(self):
@@ -21,17 +22,21 @@ class InjectionMouldingMachine():
         self.NumStates = None
         
         self.Maschinenparameter = {}
-        
         self.Führungsgrößen = {}
         
         self.ModelParamsInject = {}
         self.ModelParamsPress = {}
+        self.ModelParamsCool = {}   
 
         self.ModelInject = None
         self.ModelPress = None
+        self.ModelCool = None
         
     def ControlInput(self,opti_vars,k):
-        # Übersetzt Führungsgrößen in optimierbare control inputs
+        """
+        Übersetzt durch Maschinenparameter parametrierte
+        Führungsgrößenverläufe in optimierbare control inputs
+        """
         
         control = []
                 
@@ -44,21 +49,18 @@ class InjectionMouldingMachine():
     
 
 
-class PartQuality():
+class Part():
     """
-    
-    
+    Modell des Bauteils, welches die einwirkenden Prozessgrößen auf die 
+    resultierenden Bauteilqualität abbildet.    
     """
 
     def __init__(self):
         
         self.NumStates = None
        
-        self.Maschinenparameter = {}
-        self.Prozessgrößen = {}
-        
-        self.Model = None
-        self.ModelParams = {}    
+        self.ModelQuality = None
+        self.ModelParamsQuality = {}    
 
         
 

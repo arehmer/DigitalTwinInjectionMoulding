@@ -72,11 +72,13 @@ def MultiStageOptimization(model,ref):
             opti.subject_to(SimulateModel(model.ModelInject,X[k],U,
                                           model.ModelParamsInject)==X[k+1])
             # opti.subject_to(model.SimulateInject(X[k],model.ControlInput(opti,k))==X[k+1])
-        else:
+        elif k>ref['Umschaltpunkt']:
             U = model.ControlInput(Maschinenparameter_opti,k)
             opti.subject_to(SimulateModel(model.ModelPress,X[k],U,
                                           model.ModelParamsPress)==X[k+1])
             # opti.subject_to(model.SimulatePress(X[k],model.ControlInput(opti,k))==X[k+1])
+        else:
+             U=None # HIER MUSS EIN MODELL FÜR DIE ABKÜHLPHASE HIN
     
     ''' Further Path Constraints (to avoid values that might damage the machine or in 
     other ways harmful or unrealistic) '''
@@ -112,30 +114,56 @@ def MultiStageOptimization(model,ref):
     
     return values
 
-def QualityOptimization(model,ref):
-    #
+def SingleStageOptimization(model,ref,N):
+    """ 
+    single shooting procedure for optimal control of a scalar final value
+    
+    model: Quality Model
+    ref: skalarer Referenzwert für Optimierungsproblem
+    N: Anzahl an Zeitschritten
+    """
+    
     # Create Instance of the Optimization Problem
     opti = casadi.Opti()
     
-    # In this case, time is a decision variable...
-    
-    # Translate Maschinenparameter into opti.variables
-    Maschinenparameter_opti = CreateOptimVariables(opti, model.Maschinenparameter)
-    
-    # Number of time steps
-    N = ref['data'].shape[0]
-    
     # Create decision variables for states
-    X = opti.variable(N,model.NumStates)
+    U = opti.variable(N,1)
         
-    # Initial Constraints
-    opti.subject_to(X[0]==ref['data'][0])    
+    # Initial quality 
+    x = 0
+    y = 0
+    X = [x]
+    Y = [y]
+    
+    # Simulate Model
+    for k in range(N):
+        out = SimulateModel(model.ModelQuality,X[k],U[k],model.ModelParamsQuality)
+        X.append(out[0])
+        Y.append(out[1])
+            
+    X = hcat(X)
+    Y = hcat(Y)
+    
+    # Define Loss Function  
+    opti.minimize(sumsqr(Y[-1]-ref))
+                  
+    #Choose solver
+    opti.solver('ipopt')
+    
+    # Get solution
+    sol = opti.solve()   
 
-
+    # Extract real values from solution
+    values = {}
+    values['U'] = sol.value(U)
+    
     return values
 
 def UpdateModelParams(casadi_fun,u,x_ref,params):
-    
+    """
+    Schätzt Parameter des Maschinenmodell nach, muss für das Teilequalitätsmodell
+    noch erweitert werden
+    """
     # Create Instance of the Optimization Problem
     opti = casadi.Opti()
     

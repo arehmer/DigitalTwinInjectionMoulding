@@ -6,7 +6,7 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Modellklassen import InjectionMouldingMachine
+from Modellklassen import InjectionMouldingMachine,Part
 from OptimizationTools import *
 from miscellaneous import *
 
@@ -15,8 +15,9 @@ from miscellaneous import *
 ############
 
 
-''' Setup '''
+''' Model of Machine '''
 model = InjectionMouldingMachine()
+partmodel = Part()
 
 N=60
 
@@ -49,6 +50,27 @@ model.ModelParamsInject = {'a1':np.array([[0.9]])}
 model.ModelParamsPress = {'a2':np.array([[0.9]])}
 
 model.NumStates = 1
+
+
+""" Model of Part """
+
+x = MX.sym('x',1) 
+y = MX.sym('y',1)
+u = MX.sym('u',1) 
+
+a3 = MX.sym('a3',1)
+c3 = MX.sym('c3',1)
+
+rhs3 = a3*x + u
+out3 = c3*rhs3
+
+partmodel.ModelQuality = Function('ModelQuality', [x,u,a3,c3], [rhs3,out3],
+                                  ['x','u','a3','c3'],['rhs3','out3'])
+
+partmodel.ModelParamsQuality = {'a3':np.array([[0.9]]),'c3':np.array([[2]])}
+
+U = SingleStageOptimization(partmodel,2,100)
+
 
 ''' Everything from here on needs to run in a loop'''
 
