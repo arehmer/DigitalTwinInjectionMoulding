@@ -6,7 +6,7 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Modellklassen import InjectionMouldingMachine,Part
+import Modellklassen as Model
 from OptimizationTools import *
 from miscellaneous import *
 
@@ -16,8 +16,8 @@ from miscellaneous import *
 
 
 ''' Model of Machine '''
-model = InjectionMouldingMachine()
-partmodel = Part()
+model = Model.InjectionMouldingMachine()
+partmodel = Model.Part()
 
 N=60
 
