@@ -26,7 +26,7 @@ h2 = np.array([[2]])
 T1 = np.array([[35]])
 
 
-model.Maschinenparameter = {'h1': h1, 'h2': h2, 'T1': T1}
+model.Führungsgrößenparameter = {'h1': h1, 'h2': h2, 'T1': T1}
 model.Führungsgrößen = {'U1': lambda param,k: param['h1']+(param['h2']-param['h1'])/(1+exp(-2*(k-param['T1'])))}
 
 

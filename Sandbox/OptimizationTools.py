@@ -9,7 +9,7 @@ Created on Tue Nov 24 13:25:16 2020
 from sys import path
 path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 
-from casadi import *
+import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -28,19 +28,23 @@ import numpy as np
 from miscellaneous import *
 
 
-def SimulateModel(casadi_fun,x,u,params):
-       # Casadi Function needs list of parameters as input
-        params_new = []
+def SimulateModel(model,x,u,params=None):
+    # Casadi Function needs list of parameters as input
+    if params==None:
+        params = model.Parameters
+    
+    params_new = []
         
-        for name in  casadi_fun.name_in():
-            try:
-                params_new.append(params[name])                     # Parameters are already in the right order as expected by Casadi Function
-            except:
-                continue
-        
-        x_new = casadi_fun(x,u,*params_new)     
-                              
-        return x_new
+    for name in  model.Function.name_in():
+        try:
+            params_new.append(params[name])                      # Parameters are already in the right order as expected by Casadi Function
+        except:
+            continue
+    
+    x_new = model.Function(x,u,*params_new)     
+                          
+    return x_new
+   
     
 def CreateOptimVariables(opti, param_dict):
     
@@ -65,13 +69,14 @@ def MultiStageOptimization(model,ref):
     opti = casadi.Opti()
     
     # Translate Maschinenparameter into opti.variables
-    Maschinenparameter_opti = CreateOptimVariables(opti, model.Maschinenparameter)
+    Fuehrungsparameter_opti = CreateOptimVariables(opti, model.Parameters)
     
     # Number of time steps
     N = ref['data'].shape[0]
     
     # Create decision variables for states
-    X = opti.variable(N,model.NumStates)
+    NumStates = model.ModelInject.dim_x
+    X = opti.variable(N,NumStates)
         
     # Initial Constraints
     opti.subject_to(X[0]==ref['data'][0])
@@ -81,15 +86,13 @@ def MultiStageOptimization(model,ref):
     for k in range(N-1):
         
         if k<=ref['Umschaltpunkt']:
-            U = model.ControlInput(Maschinenparameter_opti,k)
-            opti.subject_to(SimulateModel(model.ModelInject,X[k],U,
-                                          model.ModelParamsInject)==X[k+1])
-            # opti.subject_to(model.SimulateInject(X[k],model.ControlInput(opti,k))==X[k+1])
+            U = model.ControlInput(Fuehrungsparameter_opti,k)
+            opti.subject_to(SimulateModel(model.ModelInject,X[k],U)==X[k+1])
+
         elif k>ref['Umschaltpunkt']:
-            U = model.ControlInput(Maschinenparameter_opti,k)
-            opti.subject_to(SimulateModel(model.ModelPress,X[k],U,
-                                          model.ModelParamsPress)==X[k+1])
-            # opti.subject_to(model.SimulatePress(X[k],model.ControlInput(opti,k))==X[k+1])
+            U = model.ControlInput(Fuehrungsparameter_opti,k)
+            opti.subject_to(SimulateModel(model.ModelPress,X[k],U)==X[k+1])
+
         else:
              U=None # HIER MUSS EIN MODELL FÜR DIE ABKÜHLPHASE HIN
     
@@ -104,8 +107,8 @@ def MultiStageOptimization(model,ref):
     
     
     # Set initial values for Machine Parameters
-    for key in Maschinenparameter_opti:
-        opti.set_initial(Maschinenparameter_opti[key],model.Maschinenparameter[key])
+    for key in Fuehrungsparameter_opti:
+        opti.set_initial(Fuehrungsparameter_opti[key],model.Fuehrungsparameter[key])
 
     # Set initial values for state trajectory ??
     # for key in model.Maschinenparameter_opti:
@@ -121,7 +124,7 @@ def MultiStageOptimization(model,ref):
     sol = opti.solve()
     
     # Extract real values from solution
-    values = OptimValues_to_dict(Maschinenparameter_opti,sol)
+    values = OptimValues_to_dict(Fuehrungsparameter_opti,sol)
     values['X'] = sol.value(X)
 
     
@@ -129,45 +132,46 @@ def MultiStageOptimization(model,ref):
 
 
 
-def UpdateModelParams(casadi_fun,u,x_ref,params):
+def EstimateModelParams(model,u,x_ref,init_state,online=False):
     """
     Schätzt Parameter des Maschinenmodell nach, muss für das Teilequalitätsmodell
     noch erweitert werden
     """
+    
     # Create Instance of the Optimization Problem
     opti = casadi.Opti()
     
-    params_opti = CreateOptimVariables(opti, params)
+    params_opti = CreateOptimVariables(opti, model.Parameters)
     
-    if u.shape[0]+1 != x_ref.shape[0]:
-        sys.exit('Shapes of input and output time series do not match!')
+    e = 0
     
-    N = u.shape[0]
-       
-    x = []
-    
-    # initial states
-    x.append(x_ref[0])
-   
+    # Loop over all experiments
+    for i in range(0,u.shape[0]):   
            
-    # Simulate Model
-    for i in range(N):
-        x.append(SimulateModel(casadi_fun,x[i],u[i],params_opti))
-    
-    # Concatenate list to casadiMX
-    x = vcat(x)    
-   
-    e = sumsqr(x_ref - x)
+        # Simulate Model
+        x = model.Simulation(init_state[i],u[i,:,:],params_opti)
+        
+        e = e + sumsqr(x_ref[i,:,:] - x)
     
     opti.minimize(e)
-
-    opti.solver('ipopt')
+    
+    # Solver options
+    p_opts = {"expand":True}
+    s_opts = {"max_iter": 2000}
+    opti.solver("ipopt",p_opts, s_opts)
+    
     
     # Set initial values for Model Parameters
     for key in params_opti:
-        opti.set_initial(params_opti[key],params[key])
-
-    sol = opti.solve()
+        opti.set_initial(params_opti[key], model.Parameters[key])
+    
+    
+    # Solve NLP, if solver does not converge, use last solution from opti.debug
+    try: 
+        sol = opti.solve()
+    except:
+        sol = opti.debug
+        
     values = OptimValues_to_dict(params_opti,sol)
     
     return values
