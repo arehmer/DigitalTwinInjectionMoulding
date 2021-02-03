@@ -66,7 +66,7 @@ def MultiStageOptimization(model,ref):
     
  
     # Create Instance of the Optimization Problem
-    opti = casadi.Opti()
+    opti = cs.Opti()
     
     # Translate Maschinenparameter into opti.variables
     Fuehrungsparameter_opti = CreateOptimVariables(opti, model.Parameters)
@@ -132,14 +132,63 @@ def MultiStageOptimization(model,ref):
 
 
 
-def EstimateModelParams(model,u,x_ref,init_state,online=False):
+def ModelTraining(model,data,initializations = 20, BFR=False, p_opts=None, s_opts=None):
+    
+    # Split in Training and Validation data
+    
+    results = [] 
+    
+    for i in range(0,initializations):
+        print(i)
+        # In first iteration, initialize with current model parameters (useful for online training)
+        # if(i > 0):
+            # continue
+        
+        # Estimate Parameters on training data
+        new_params = ModelParameterEstimation(model,data)
+        
+        # Assign new parameters to model
+        model.Parameters = new_params
+        
+        # Evaluate on Validation data
+        u_val = data['u_val']
+        x_ref_val = data['x_val']
+        init_state_val = data['init_state_val']
+
+        # Loop over all experiments
+        
+        e = 0
+        
+        for j in range(0,u_val.shape[0]):   
+               
+            # Simulate Model
+            x = model.Simulation(init_state_val[j],u_val[j])
+            x = np.array(x)
+                     
+            e = e + cs.sumsqr(x_ref_val[j] - x) 
+        
+        # Calculate mean error over all validation batches
+        e = e / u_val.shape[0]
+        
+        # save parameters and performance in list
+        results.append([e,new_params])
+        
+    
+    return results 
+
+def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     """
     Schätzt Parameter des Maschinenmodell nach, muss für das Teilequalitätsmodell
     noch erweitert werden
     """
     
+    
+    u = data['u_train']
+    x_ref = data['x_train']
+    init_state = data['init_state_train']
+    
     # Create Instance of the Optimization Problem
-    opti = casadi.Opti()
+    opti = cs.Opti()
     
     params_opti = CreateOptimVariables(opti, model.Parameters)
     
@@ -149,19 +198,23 @@ def EstimateModelParams(model,u,x_ref,init_state,online=False):
     for i in range(0,u.shape[0]):   
            
         # Simulate Model
-        x = model.Simulation(init_state[i],u[i,:,:],params_opti)
+        x = model.Simulation(init_state[i],u[i],params_opti)
         
         e = e + sumsqr(x_ref[i,:,:] - x)
     
     opti.minimize(e)
     
     # Solver options
-    p_opts = {"expand":True}
-    s_opts = {"max_iter": 2000}
+    if p_opts is None:
+        p_opts = {"expand":False}
+    if s_opts is None:
+        s_opts = {"max_iter": 1000, "print_level":0}
+    
+    # Create Solver
     opti.solver("ipopt",p_opts, s_opts)
     
     
-    # Set initial values for Model Parameters
+    # Set initial values of Opti Variables as current Model Parameters
     for key in params_opti:
         opti.set_initial(params_opti[key], model.Parameters[key])
     
@@ -186,7 +239,7 @@ def SingleStageOptimization(model,ref,N):
     """
     
     # Create Instance of the Optimization Problem
-    opti = casadi.Opti()
+    opti = cs.Opti()
     
     # Create decision variables for states
     U = opti.variable(N,1)
