@@ -6,7 +6,7 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Modellklassen import InjectionMouldingMachine,Part
+import Modellklassen as Model
 from OptimizationTools import *
 from miscellaneous import *
 
@@ -16,8 +16,8 @@ from miscellaneous import *
 
 
 ''' Model of Machine '''
-model = InjectionMouldingMachine()
-partmodel = Part()
+model = Model.InjectionMouldingMachine()
+partmodel = Model.Part()
 
 N=60
 
@@ -26,7 +26,7 @@ h2 = np.array([[2]])
 T1 = np.array([[35]])
 
 
-model.Maschinenparameter = {'h1': h1, 'h2': h2, 'T1': T1}
+model.Führungsgrößenparameter = {'h1': h1, 'h2': h2, 'T1': T1}
 model.Führungsgrößen = {'U1': lambda param,k: param['h1']+(param['h2']-param['h1'])/(1+exp(-2*(k-param['T1'])))}
 
 
