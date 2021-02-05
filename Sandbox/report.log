@@ -5,3 +5,56 @@
 2021-02-03 16:39:52,119 - pyswarms.discrete.binary - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
 2021-02-03 16:40:02,879 - pyswarms.discrete.binary - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
 2021-02-03 16:40:02,952 - pyswarms.discrete.binary - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 08:42:19,388 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 08:42:19,478 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 08:43:31,955 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 08:43:32,042 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 08:44:07,999 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 08:44:08,095 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 08:45:02,439 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 09:39:50,018 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 09:39:50,170 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 09:40:01,114 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 09:40:01,265 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 09:40:11,122 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 09:42:49,061 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 09:55:56,756 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 09:58:04,525 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:04:50,140 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:06:14,535 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:06:14,698 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0]
+2021-02-05 10:17:26,332 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:17:26,460 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 0.0001489047176986434, best pos: [0.00928258 0.00792076]
+2021-02-05 10:37:27,869 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:37:28,013 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 17.78583847847618, best pos: [1.33170564 4.00154952]
+2021-02-05 10:37:43,913 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:37:44,053 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 17.017180836929263, best pos: [1.0085164  4.00000944]
+2021-02-05 10:37:48,598 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:37:48,735 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 17.0672394782673, best pos: [1.0329909  4.00002116]
+2021-02-05 10:37:50,210 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:37:50,344 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 17.37651118733618, best pos: [1.17321544 4.00000959]
+2021-02-05 10:37:51,713 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 10:37:51,849 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 17.095104121529037, best pos: [1.04638082 4.00002391]
+2021-02-05 11:36:14,391 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 11:36:53,710 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 11:38:04,875 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 11:51:53,273 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 11:52:39,040 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 11:52:44,527 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:08:32,174 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:09:56,352 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:10:16,815 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:11:24,255 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:11:46,343 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:13:06,277 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:13:55,479 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:18:36,298 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:18:50,910 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:38:01,345 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 12:39:27,230 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 14:28:22,738 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 14:32:59,646 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 14:34:36,069 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 14:34:36,320 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0 0]
+2021-02-05 14:34:48,085 - BoundedBinaryPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 10, 'p': 1}
+2021-02-05 14:34:48,337 - BoundedBinaryPSO - INFO - Optimization finished | best cost: 0.0, best pos: [0 0 0]

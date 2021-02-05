@@ -27,9 +27,10 @@ class BoundedBinaryPSO(BinaryPSO):
     def __init__(
         self,
         n_particles,
-        dimensions,
+        dimensions_discrete,
         options,
-        bounds = None,
+        bounds,
+        bh_strategy="periodic",
         init_pos=None,
         velocity_clamp=None,
         vh_strategy="unmodified",
@@ -60,6 +61,10 @@ class BoundedBinaryPSO(BinaryPSO):
                     the Minkowski p-norm to use. 1 is the
                     sum-of-absolute values (or L1 distance) while 2 is
                     the Euclidean (or L2) distance.
+        bounds : tuple of numpy.ndarray, optional
+            a tuple of size 2 where the first entry is the minimum bound while
+            the second entry is the maximum bound. Each array must be of shape
+            :code:`(dimensions,)`.
         init_pos : numpy.ndarray, optional
             option to explicitly set the particles' initial positions. Set to
             :code:`None` if you wish to generate the particles randomly.
@@ -82,10 +87,17 @@ class BoundedBinaryPSO(BinaryPSO):
         self.rep = Reporter(logger=logging.getLogger(__name__))
         # Assign k-neighbors and p-value as attributes
         self.k, self.p = options["k"], options["p"]
+        
+        self.dimensions_discrete = dimensions_discrete
+        
+        self.bits,self.bounds = self.translate_discrete_to_binary(
+            dimensions_discrete,bounds)
+        
+        
         # Initialize parent class
         super(BinaryPSO, self).__init__(
             n_particles=n_particles,
-            dimensions=dimensions,
+            dimensions=sum(self.bits),
             binary=True,
             options=options,
             init_pos=init_pos,
@@ -93,20 +105,14 @@ class BoundedBinaryPSO(BinaryPSO):
             ftol=ftol,
             ftol_iter=ftol_iter,
         )
-        self.bounds = bounds
+        # self.bounds = bounds
         # Initialize the resettable attributes
         self.reset()
         # Initialize the topology
         self.top = Ring(static=False)
         self.vh = VelocityHandler(strategy=vh_strategy)
+        self.bh = BoundaryHandler(strategy=bh_strategy)
         self.name = __name__
-        
-        
-        
-        
-        
-        
-        
         
         
         
@@ -150,6 +156,7 @@ class BoundedBinaryPSO(BinaryPSO):
             lvl=log_level,
         )
         # Populate memory of the handlers
+        self.bh.memory = self.swarm.position
         self.vh.memory = self.swarm.position
 
         # Setup Pool of processes for parallel evaluation
@@ -199,6 +206,7 @@ class BoundedBinaryPSO(BinaryPSO):
                 self.swarm, self.velocity_clamp, self.vh
             )
             self.swarm.position = self._compute_position(self.swarm)
+            
         # Obtain the final best_cost and the final best_position
         final_best_cost = self.swarm.best_cost.copy()
         final_best_pos = self.swarm.pbest_pos[
@@ -215,3 +223,115 @@ class BoundedBinaryPSO(BinaryPSO):
             pool.close()
 
         return (final_best_cost, final_best_pos)
+    
+    # def _compute_position(
+    #     self, swarm, bounds=None, bh=BoundaryHandler(strategy="periodic")
+    # ):
+    #     """Update the position matrix of the swarm
+
+    #     This computes the next position in a binary swarm. It compares the
+    #     sigmoid output of the velocity-matrix and compares it with a randomly
+    #     generated matrix.
+
+    #     Parameters
+    #     ----------
+    #     swarm: pyswarms.backend.swarms.Swarm
+    #         a Swarm class
+    #     """
+        
+        
+    #     temp_position = (np.random.random_sample(size=swarm.dimensions)
+    #         < self._sigmoid(swarm.velocity)) * 1
+        
+    #     #  Not necessary, bounds are included in binary coding !!!
+    #     # if bounds is not None:
+    #     #     # Calculate binary positions back to real positions
+    #     #     temp_position_real = self.BinarySwarm_to_DiscreteSwarm(temp_position)
+    #     #     temp_position_real = bh(temp_position_real, bounds)
+    #     #     # Calculate bounded real positions back to binary positions
+    #     #     temp_position = f(temp_position_real)
+    #     # position = temp_position
+        
+    #     # print(r)
+        
+    #     return temp_position
+    
+    def translate_discrete_to_binary(self,dimensions,bounds):
+        """
+        Calculates the number of bits necessary to represent a discrete
+        optimization problem with "dimensions" number of discrete variables
+        as a binary optimization problem with a certain number of bits and
+        adjusts bounds accordingly
+        
+        Parameters
+        ----------  
+        dimensions: integer, number of discrete variables
+        bounds : tuple of numpy.ndarray, optional
+            a tuple of size 2 where the first entry is the minimum bound while
+            the second entry is the maximum bound. Each array must be of shape
+            :code:`(dimensions,)`.
+        """
+        
+        bits = []
+        
+        for n in range(0,dimensions):
+            
+            # Number of bits required rounding down!
+            bits.append(int(np.log10(bounds[1][n]-bounds[0][n]+1) / np.log10(2)))
+        
+            # Adjust upper bound accordingly
+            bounds[1][n] = bounds[0][n] + 2**bits[n]-1
+        
+        return bits, bounds
+
+    def BinarySwarm_to_DiscreteSwarm(self,binary_position):
+        
+        discrete_position = np.zeros((self.n_particles,self.dimensions_discrete))
+        
+        cum_sum = 0
+        
+        for i in range(0,len(self.bits)):
+            
+            bit = self.bits[i]
+            lb = self.bounds[0][i]
+            
+            discrete_position[:,cum_sum:bit] = lb + \
+            self.bool2int(binary_position[:,cum_sum:cum_sum+bit])
+            
+            cum_sum = cum_sum + bit
+        return discrete_position    
+                    
+    def bool2int(self,x):
+        
+        x_int = np.zeros((x.shape[0],1))
+        
+        for row in range(0,x.shape[0]):
+            row_int = 0
+            
+            for i,j in enumerate(x[row,:]):
+                row_int += j<<i
+            
+            x_int[row] = row_int
+        
+        return x_int          
+        
+    def float_to_binary(x, m, n):
+        """Convert the float value `x` to a binary string of length `m + n`
+        where the first `m` binary digits are the integer part and the last
+        'n' binary digits are the fractional part of `x`.
+        """
+        x_scaled = round(x * 2 ** n)
+        return '{:0{}b}'.format(x_scaled, m + n)
+    
+    def binary_to_float(bstr, m, n):
+        """Convert a binary string in the format given above to its float
+        value.
+        """
+        return int(bstr, 2) / 2 ** n        
+        
+     
+        
+        
+        
+        
+        

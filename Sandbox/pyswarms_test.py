@@ -11,6 +11,8 @@ from pyswarms.utils.functions.single_obj import sphere as f
 import pyswarms.backend as P
 from pyswarms.backend.topology import Star
 
+from pyswarms.single import GlobalBestPSO
+
 from pyswarms.discrete.binary import BinaryPSO
 
 from BoundedBinaryPSO import BoundedBinaryPSO
@@ -20,14 +22,18 @@ from BoundedBinaryPSO import BoundedBinaryPSO
 
 # print('The following are the attributes of our swarm: {}'.format(my_swarm.__dict__.keys()))
 my_options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':10, 'p':1} # arbitrarily set
-test = BoundedBinaryPSO(n_particles=10, dimensions=2, options=my_options)
 
-# optimizer = BinaryPSO(n_particles=50, dimensions=2, options=my_options) # Reuse our previous options
+lb = np.array([1,4])
+ub = np.array([2,10])
 
-# test.optimize(f, iters=100)
+test = BoundedBinaryPSO(n_particles=10, dimensions_discrete=2, options=my_options, bounds =(lb,ub))
+test.optimize(f, iters=100)
 
 
 
+
+# optimizer = GlobalBestPSO(n_particles=50, dimensions=2, options=my_options,bounds =(lb,ub)) # Reuse our previous options
+# optimizer.optimize(f, iters=100)
 
 
 
