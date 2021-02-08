@@ -72,40 +72,13 @@ class MLP():
     def __init__(self,dim_u,dim_x,dim_hidden,name):
         
         self.dim_u = dim_u
+        self.dim_hidden = dim_hidden
         self.dim_x = dim_x
+        self.name = name
         
-        u = cs.MX.sym('u',dim_u,1)
-        x = cs.MX.sym('x',dim_x,1)
-        
-        # Parameters
-        W_h = cs.MX.sym('W_h',dim_hidden,dim_u+dim_x)
-        b_h = cs.MX.sym('b_h',dim_hidden,1)
-        
-        W_o = cs.MX.sym('W_out',dim_x,dim_hidden)
-        b_o = cs.MX.sym('b_out',dim_x,1)
-        
-        # Put all Parameters in Dictionary with random initialization
-        self.Parameters = {'W_h':np.random.rand(W_h.shape[0],W_h.shape[1]),
-                           'b_h':np.random.rand(b_h.shape[0],b_h.shape[1]),
-                           'W_o':np.random.rand(W_o.shape[0],W_o.shape[1]),
-                           'b_o':np.random.rand(b_o.shape[0],b_o.shape[1])}
-        
-        # self.Input = {'u':np.random.rand(u.shape)}
-        
-        # Equations
-        h =  cs.tanh(cs.mtimes(W_h,cs.vertcat(u,x))+b_h)
-        x_new = cs.mtimes(W_o,h)+b_o
-        
-        
-        input = [x,u,W_h,b_h,W_o,b_o]
-        input_names = ['x','u','W_h','b_h','W_o','b_o']
-        
-        output = [x_new]
-        output_names = ['x_new']  
-        
-        self.Function = cs.Function(name, input, output, input_names,output_names)
+        self.Initialize()
 
-    
+   
     def OneStepPrediction(self,x0,u0,params=None):
         # Casadi Function needs list of parameters as input
         if params==None:
@@ -140,7 +113,45 @@ class MLP():
        
         return x
 
-
+    def Initialize(self):
+                
+            dim_u = self.dim_u
+            dim_hidden = self.dim_hidden
+            dim_x = self.dim_x 
+            name = self.name
+        
+            u = cs.MX.sym('u',dim_u,1)
+            x = cs.MX.sym('x',dim_x,1)
+            
+            # Parameters
+            W_h = cs.MX.sym('W_h',dim_hidden,dim_u+dim_x)
+            b_h = cs.MX.sym('b_h',dim_hidden,1)
+            
+            W_o = cs.MX.sym('W_out',dim_x,dim_hidden)
+            b_o = cs.MX.sym('b_out',dim_x,1)
+            
+            # Put all Parameters in Dictionary with random initialization
+            self.Parameters = {'W_h':np.random.rand(W_h.shape[0],W_h.shape[1]),
+                               'b_h':np.random.rand(b_h.shape[0],b_h.shape[1]),
+                               'W_o':np.random.rand(W_o.shape[0],W_o.shape[1]),
+                               'b_o':np.random.rand(b_o.shape[0],b_o.shape[1])}
+        
+            # self.Input = {'u':np.random.rand(u.shape)}
+            
+            # Equations
+            h =  cs.tanh(cs.mtimes(W_h,cs.vertcat(u,x))+b_h)
+            x_new = cs.mtimes(W_o,h)+b_o
+            
+            
+            input = [x,u,W_h,b_h,W_o,b_o]
+            input_names = ['x','u','W_h','b_h','W_o','b_o']
+            
+            output = [x_new]
+            output_names = ['x_new']  
+            
+            self.Function = cs.Function(name, input, output, input_names,output_names)
+            
+            return None
     
 def logistic(x):
     

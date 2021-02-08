@@ -12,6 +12,8 @@ path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
+from DiscreteBoundedPSO import DiscreteBoundedPSO
+import pandas as pd
 
 # Import sphere function as objective function
 #from pyswarms.utils.functions.single_obj import sphere as f
@@ -139,10 +141,10 @@ def ModelTraining(model,data,initializations = 20, BFR=False, p_opts=None, s_opt
     results = [] 
     
     for i in range(0,initializations):
-        print(i)
-        # In first iteration, initialize with current model parameters (useful for online training)
-        # if(i > 0):
-            # continue
+        
+        # in first run use initial model parameters (useful for online training) 
+        if i > 0:
+            model.Initialize()
         
         # Estimate Parameters on training data
         new_params = ModelParameterEstimation(model,data)
@@ -169,17 +171,73 @@ def ModelTraining(model,data,initializations = 20, BFR=False, p_opts=None, s_opt
         
         # Calculate mean error over all validation batches
         e = e / u_val.shape[0]
+        e = np.array(e).reshape((1,))
         
         # save parameters and performance in list
         results.append([e,new_params])
-        
+    
+    results = pd.DataFrame(data = results, columns = ['loss','params'])
     
     return results 
 
+def HyperParameterPSO(model,data,param_bounds,n_particles,options,**kwargs):
+    
+    
+    # Formulate Particle Swarm Optimization Problem
+    dimensions_discrete = len(param_bounds.keys())
+    lb = []
+    ub = []
+    
+    for param in param_bounds.keys():
+        
+        lb.append(param_bounds[param][0])
+        ub.append(param_bounds[param][1])
+    
+    bounds= (lb,ub)
+    
+    PSO_problem = DiscreteBoundedPSO(n_particles, dimensions_discrete, 
+                                     options, bounds)
+    
+    cost_func_kwargs = {'model': model,
+                        'param_bounds': param_bounds,
+                        'n_particles': n_particles,
+                        'dimensions_discrete': dimensions_discrete,
+                        'training_history': 'path/file.pkl'}
+    
+    
+    # Create Cost function
+    def PSO_cost_function(swarm_position,**kwargs):
+        
+        # Load training history to avoid calculating stuff muliple times
+       
+        # Initialize empty array for costs
+        cost = np.zeros((n_particles,1))
+    
+        for particle in range(0,n_particles):
+         
+            # Adjust model parameters according to particle
+            for p in range(0,dimensions_discrete):  
+                setattr(model,list(param_bounds.keys())[p],
+                        swarm_position[particle,p])
+            
+            model.Initialize()
+            
+            # Estimate parameters
+            results = ModelTraining(model,data,initializations = 2, 
+                                    BFR=False, p_opts=None, s_opts=None)
+            
+            # calculate mean performance
+            cost[particle] = results.loss.mean()
+            cost = cost.reshape((n_particles,))
+        return cost
+    
+    PSO_problem.optimize(PSO_cost_function, iters=100)
+    
+    return PSO_problem
+
 def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     """
-    Schätzt Parameter des Maschinenmodell nach, muss für das Teilequalitätsmodell
-    noch erweitert werden
+    
     """
     
     
@@ -208,7 +266,7 @@ def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     if p_opts is None:
         p_opts = {"expand":False}
     if s_opts is None:
-        s_opts = {"max_iter": 1000, "print_level":0}
+        s_opts = {"max_iter": 10, "print_level":0}
     
     # Create Solver
     opti.solver("ipopt",p_opts, s_opts)
@@ -273,111 +331,6 @@ def SingleStageOptimization(model,ref,N):
     values['U'] = sol.value(U)
     
     return values
-
-# def ParticleSwarmOptimization(quality_model,ref,bounds,u0):
-#     """
-    
-#     Parameters
-#     ----------
-#     quality_model : Instanz der Part-Klasse
-#         Dynamisches Modell der Bauteilqualität.
-#     ref : float
-#         Referenz-Bauteilqualität
-#     bounds : list of integers
-#         bounds[0]/bounds[1] ist untere/obere Grenze der Zykluszeit in 
-#         diskreten Zeitschritten
-#     u0 : list?
-#         Initialisierung der Prozessgrößentrajektorien
-
-#     Returns
-#     -------
-#     u_opt: Dictionary?
-#         Optimierte Prozessgrößenverläufe
-
-#     """
-
-#     if bounds = None:
-#         pass
-#         """    
-#         Dann keine Partikelschwarmoptimierung über die Zeit sondern direkt die 
-#         Prozessgrößentrajektorie optimieren
-#         """  
-    
-#     else:
-#         """
-#         Partikelschwarmoptimierung über die Zeit
-#         """
-        
-#         """
-#         Kostenfunktion f muss noch implementiert werden. Diese muss folgendes
-#         leisten:
-#             Rechne diskrete Zeitschritte in Binärzahl um, und zwar so, dass die 
-#             definierten bounds für die Zeit eingehalten werden
-#             Loop über SingleStageOptimization, da eine parallele Auswertung 
-#             hier nicht möglich ist
-        
-#         """
-        
-        
-#         n_particles = 100
-#         dimensions = 10000000 # ergibt sich aus den bounds!
-#         options = {'c1':1, 'c2':1, 'w':1, 'k':10, 'p':1} 
-        
-#         # Initialisiere Optimizer
-#         SwarmOptimizer = BinaryPSO(n_particles, dimensions, options, 
-#                                    init_pos=None, velocity_clamp=None, 
-#                                    vh_strategy='unmodified', ftol=-inf, 
-#                                    ftol_iter=1)
-        
-
-        
-        
-#         # Perform optimization
-#         cost, pos = SwarmOptimizer.optimize(f, iters=1000)
-    
-    
-    
-    
-    
-#     return u_opt
-    
-# def ParticleSwarmCostFunction()    
-    
-    
-#     my_topology = Star() # The Topology Class
-#     my_options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4} # arbitrarily set
-#     my_swarm = P.create_swarm(n_particles=50, dimensions=2, options=my_options) # The Swarm Class
-    
-#     print('The following are the attributes of our swarm: {}'.format(my_swarm.__dict__.keys()))    
-
-#     iterations = 100 # Set 100 iterations
-#     for i in range(iterations):
-#         # Part 1: Update personal best
-#         my_swarm.current_cost = f(my_swarm.position) # Compute current cost
-#         my_swarm.pbest_cost = f(my_swarm.pbest_pos)  # Compute personal best pos
-#         my_swarm.pbest_pos, my_swarm.pbest_cost = P.compute_pbest(my_swarm) # Update and store
-    
-#         # Part 2: Update global best
-#         # Note that gbest computation is dependent on your topology
-#         if np.min(my_swarm.pbest_cost) < my_swarm.best_cost:
-#             my_swarm.best_pos, my_swarm.best_cost = my_topology.compute_gbest(my_swarm)
-    
-#         # Let's print our output
-#         if i%20==0:
-#             print('Iteration: {} | my_swarm.best_cost: {:.4f}'.format(i+1, my_swarm.best_cost))
-    
-#         # Part 3: Update position and velocity matrices
-#         # Note that position and velocity updates are dependent on your topology
-#         my_swarm.velocity = my_topology.compute_velocity(my_swarm)
-#         my_swarm.position = my_topology.compute_position(my_swarm)
-    
-#     print('The best cost found by our swarm is: {:.4f}'.format(my_swarm.best_cost))
-#     print('The best position found by our swarm is: {}'.format(my_swarm.best_pos))
-
-    
-#     SingleStageOptimization(model,ref,N)
-
-
 
 
 

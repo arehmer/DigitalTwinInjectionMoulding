@@ -23,7 +23,7 @@ from pyswarms.base import DiscreteSwarmOptimizer
 from pyswarms.utils.reporter import Reporter
 
 
-class BoundedBinaryPSO(BinaryPSO):
+class DiscreteBoundedPSO(BinaryPSO):
     def __init__(
         self,
         n_particles,
@@ -165,10 +165,21 @@ class BoundedBinaryPSO(BinaryPSO):
         self.swarm.pbest_cost = np.full(self.swarm_size[0], np.inf)
         ftol_history = deque(maxlen=self.ftol_iter)
         for i in self.rep.pbar(iters, self.name) if verbose else range(iters):
+            
             # Compute cost for current position and personal best
+            
+            # Binary swarm postitions need to be transformed to discrete swarm
+            # postitions first (only positions are transformed!)
+            binary_swarm_position = self.BinarySwarmPositions_to_DiscreteSwarmPositions()
+                   
+            # Evaluate Cost Function
             self.swarm.current_cost = compute_objective_function(
                 self.swarm, objective_func, pool, **kwargs
             )
+            
+            # Transform discrete swarm positions back to binary positions
+            self.swarm.position = binary_swarm_position
+            
             self.swarm.pbest_pos, self.swarm.pbest_cost = compute_pbest(
                 self.swarm
             )
@@ -224,38 +235,6 @@ class BoundedBinaryPSO(BinaryPSO):
 
         return (final_best_cost, final_best_pos)
     
-    # def _compute_position(
-    #     self, swarm, bounds=None, bh=BoundaryHandler(strategy="periodic")
-    # ):
-    #     """Update the position matrix of the swarm
-
-    #     This computes the next position in a binary swarm. It compares the
-    #     sigmoid output of the velocity-matrix and compares it with a randomly
-    #     generated matrix.
-
-    #     Parameters
-    #     ----------
-    #     swarm: pyswarms.backend.swarms.Swarm
-    #         a Swarm class
-    #     """
-        
-        
-    #     temp_position = (np.random.random_sample(size=swarm.dimensions)
-    #         < self._sigmoid(swarm.velocity)) * 1
-        
-    #     #  Not necessary, bounds are included in binary coding !!!
-    #     # if bounds is not None:
-    #     #     # Calculate binary positions back to real positions
-    #     #     temp_position_real = self.BinarySwarm_to_DiscreteSwarm(temp_position)
-    #     #     temp_position_real = bh(temp_position_real, bounds)
-    #     #     # Calculate bounded real positions back to binary positions
-    #     #     temp_position = f(temp_position_real)
-    #     # position = temp_position
-        
-    #     # print(r)
-        
-    #     return temp_position
-    
     def translate_discrete_to_binary(self,dimensions,bounds):
         """
         Calculates the number of bits necessary to represent a discrete
@@ -284,8 +263,15 @@ class BoundedBinaryPSO(BinaryPSO):
         
         return bits, bounds
 
-    def BinarySwarm_to_DiscreteSwarm(self,binary_position):
+    def BinarySwarmPositions_to_DiscreteSwarmPositions(self):
+        """
+        Converts binary self.swarm.position to discrete values. Returns the 
+        original binary position, so that it can be used to restore 
+        self.swarm.position to the original binary values.
+        """
         
+        
+        binary_position = self.swarm.position
         discrete_position = np.zeros((self.n_particles,self.dimensions_discrete))
         
         cum_sum = 0
@@ -299,7 +285,12 @@ class BoundedBinaryPSO(BinaryPSO):
             self.bool2int(binary_position[:,cum_sum:cum_sum+bit])
             
             cum_sum = cum_sum + bit
-        return discrete_position    
+        
+        
+        # Set swarm position to discrete integer values
+        self.swarm.position = discrete_position.astype(int)
+        
+        return binary_position    
                     
     def bool2int(self,x):
         
@@ -315,19 +306,19 @@ class BoundedBinaryPSO(BinaryPSO):
         
         return x_int          
         
-    def float_to_binary(x, m, n):
-        """Convert the float value `x` to a binary string of length `m + n`
-        where the first `m` binary digits are the integer part and the last
-        'n' binary digits are the fractional part of `x`.
-        """
-        x_scaled = round(x * 2 ** n)
-        return '{:0{}b}'.format(x_scaled, m + n)
+    # def float_to_binary(x, m, n):
+    #     """Convert the float value `x` to a binary string of length `m + n`
+    #     where the first `m` binary digits are the integer part and the last
+    #     'n' binary digits are the fractional part of `x`.
+    #     """
+    #     x_scaled = round(x * 2 ** n)
+    #     return '{:0{}b}'.format(x_scaled, m + n)
     
-    def binary_to_float(bstr, m, n):
-        """Convert a binary string in the format given above to its float
-        value.
-        """
-        return int(bstr, 2) / 2 ** n        
+    # def binary_to_float(bstr, m, n):
+    #     """Convert a binary string in the format given above to its float
+    #     value.
+    #     """
+    #     return int(bstr, 2) / 2 ** n        
         
      
         

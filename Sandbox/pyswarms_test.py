@@ -15,18 +15,21 @@ from pyswarms.single import GlobalBestPSO
 
 from pyswarms.discrete.binary import BinaryPSO
 
-from BoundedBinaryPSO import BoundedBinaryPSO
+from DiscreteBoundedPSO import DiscreteBoundedPSO
 # my_topology = Star() # The Topology Class
 
 # my_swarm = P.create_swarm(n_particles=50, dimensions=2, options=my_options) # The Swarm Class
 
 # print('The following are the attributes of our swarm: {}'.format(my_swarm.__dict__.keys()))
-my_options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':10, 'p':1} # arbitrarily set
+options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':10, 'p':1} # arbitrarily set
 
-lb = np.array([1,4])
+param_bounds = {'dim_hidden':np.array([2,10])}
+
+
+lb = np.array([2,2])
 ub = np.array([2,10])
 
-test = BoundedBinaryPSO(n_particles=10, dimensions_discrete=2, options=my_options, bounds =(lb,ub))
+test = DiscreteBoundedPSO(n_particles=10, dimensions_discrete=2, options=my_options, bounds =(lb,ub))
 test.optimize(f, iters=100)
 
 
