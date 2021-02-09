@@ -9,11 +9,15 @@ Created on Tue Nov 24 13:25:16 2020
 from sys import path
 path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 
+import os
+
 import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 from DiscreteBoundedPSO import DiscreteBoundedPSO
 import pandas as pd
+import pickle as pkl
 
 # Import sphere function as objective function
 #from pyswarms.utils.functions.single_obj import sphere as f
@@ -136,7 +140,11 @@ def MultiStageOptimization(model,ref):
 
 def ModelTraining(model,data,initializations = 20, BFR=False, p_opts=None, s_opts=None):
     
-    # Split in Training and Validation data
+        # Solver options
+    if p_opts is None:
+        p_opts = {"expand":False}
+    if s_opts is None:
+        s_opts = {"max_iter": 1000, "print_level":0}
     
     results = [] 
     
@@ -147,7 +155,7 @@ def ModelTraining(model,data,initializations = 20, BFR=False, p_opts=None, s_opt
             model.Initialize()
         
         # Estimate Parameters on training data
-        new_params = ModelParameterEstimation(model,data)
+        new_params = ModelParameterEstimation(model,data,p_opts,s_opts)
         
         # Assign new parameters to model
         model.Parameters = new_params
@@ -180,7 +188,8 @@ def ModelTraining(model,data,initializations = 20, BFR=False, p_opts=None, s_opt
     
     return results 
 
-def HyperParameterPSO(model,data,param_bounds,n_particles,options,**kwargs):
+def HyperParameterPSO(model,data,param_bounds,n_particles,options,
+                      initializations=10,**kwargs):
     
     
     # Formulate Particle Swarm Optimization Problem
@@ -195,45 +204,90 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,**kwargs):
     
     bounds= (lb,ub)
     
+    # Define PSO Problem
     PSO_problem = DiscreteBoundedPSO(n_particles, dimensions_discrete, 
                                      options, bounds)
+    
     
     cost_func_kwargs = {'model': model,
                         'param_bounds': param_bounds,
                         'n_particles': n_particles,
                         'dimensions_discrete': dimensions_discrete,
-                        'training_history': 'path/file.pkl'}
-    
+                        'initializations':initializations}
     
     # Create Cost function
     def PSO_cost_function(swarm_position,**kwargs):
         
         # Load training history to avoid calculating stuff muliple times
-       
+        try:
+            hist = pkl.load(open('HyperParamPSO_hist.pkl','rb'))
+        except:
+            
+            for key in param_bounds.keys():
+                param_bounds[key] = np.arange(param_bounds[key][0],
+                                              param_bounds[key][1]+1,
+                                              dtype = int)
+            
+            index = pd.MultiIndex.from_product(param_bounds.values(),
+                                               names=param_bounds.keys())
+            
+            hist = pd.DataFrame(index = index, columns=['cost','model_params'])
+        
         # Initialize empty array for costs
         cost = np.zeros((n_particles,1))
     
         for particle in range(0,n_particles):
-         
-            # Adjust model parameters according to particle
-            for p in range(0,dimensions_discrete):  
-                setattr(model,list(param_bounds.keys())[p],
-                        swarm_position[particle,p])
             
-            model.Initialize()
-            
-            # Estimate parameters
-            results = ModelTraining(model,data,initializations = 2, 
-                                    BFR=False, p_opts=None, s_opts=None)
-            
-            # calculate mean performance
-            cost[particle] = results.loss.mean()
-            cost = cost.reshape((n_particles,))
+            if (math.isnan(hist.loc[swarm_position[particle]].cost.item()) and
+            math.isnan(hist.loc[swarm_position[particle]].model_params.item())):
+                
+                # Adjust model parameters according to particle
+                for p in range(0,dimensions_discrete):  
+                    setattr(model,list(param_bounds.keys())[p],
+                            swarm_position[particle,p])
+                
+                model.Initialize()
+                
+                # Estimate parameters
+                results = ModelTraining(model,data,initializations, 
+                                        BFR=False, p_opts=None, s_opts=None)
+                
+                # Save all results of this particle in a file somewhere
+                # TO DO
+                
+                # calculate mean performance over all initializations
+                cost[particle] = results.loss.min()
+                
+                # Save new data to dictionary for future iterations
+                hist.loc[swarm_position[particle],'cost'] = cost[particle]
+                
+                idx_min = pd.to_numeric(results['loss'].str[0]).argmin()
+                hist.loc[swarm_position[particle],'model_params'] = \
+                [results.loc[idx_min,'params']]
+                
+                # Save DataFrame to File
+                pkl.dump(hist, open('HyperParamPSO_hist.pkl','wb'))
+                
+            else:
+                cost[particle] = hist.loc[swarm_position[particle]].cost.item()
+                
+        
+        
+        
+        cost = cost.reshape((n_particles,))
         return cost
     
-    PSO_problem.optimize(PSO_cost_function, iters=100)
     
-    return PSO_problem
+    # Solve PSO Optimization Problem
+    PSO_problem.optimize(PSO_cost_function, iters=100, **cost_func_kwargs)
+    
+    # Load intermediate results
+    hist = pkl.load(open('HyperParamPSO_hist.pkl','rb'))
+    
+    # Delete file with intermediate results
+    os.remove('HyperParamPSO_hist.pkl')
+    
+    return PSO_problem, hist
 
 def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     """
@@ -261,12 +315,6 @@ def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
         e = e + sumsqr(x_ref[i,:,:] - x)
     
     opti.minimize(e)
-    
-    # Solver options
-    if p_opts is None:
-        p_opts = {"expand":False}
-    if s_opts is None:
-        s_opts = {"max_iter": 10, "print_level":0}
     
     # Create Solver
     opti.solver("ipopt",p_opts, s_opts)

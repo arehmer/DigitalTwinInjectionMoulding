@@ -5,6 +5,7 @@ path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 import Modellklassen as Model
 from OptimizationTools import *
@@ -39,14 +40,12 @@ model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='test')
 # ident_res = ModelTraining(model,data,initializations = 2)
 
 param_bounds = {'dim_hidden':np.array([2,10])}
-options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':10, 'p':1}
-n_particles = 10
+options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
+n_particles = 5
 kwargs = {}
 
-results = HyperParameterPSO(model,data,param_bounds,n_particles,
+results, hist = HyperParameterPSO(model,data,param_bounds,n_particles,
                             options,**kwargs)
-
-
 
 
 ''' Estimate Parameters RNN'''
