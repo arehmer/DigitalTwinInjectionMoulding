@@ -36,29 +36,37 @@ data = {'u_train':u[0:8], 'x_train':x[0:8],'init_state_train': init_state[0:8],
 
 
 ''' Estimate Parameters MLP '''
-model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='test')
-# ident_res = ModelTraining(model,data,initializations = 2)
+# model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='test')
+# # ident_res = ModelTraining(model,data,initializations = 2)
 
-param_bounds = {'dim_hidden':np.array([2,10])}
-options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
-n_particles = 5
-kwargs = {}
+# param_bounds = {'dim_hidden':np.array([2,10])}
+# options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
+# n_particles = 5
+# initializations = 5
+# s_opts = {"max_iter": 10, "print_level":0}
 
-results, hist = HyperParameterPSO(model,data,param_bounds,n_particles,
-                            options,**kwargs)
+# results, hist = HyperParameterPSO(model,data,param_bounds,n_particles,
+#                             options,initializations,p_opts=None,s_opts=s_opts)
 
 
 ''' Estimate Parameters RNN'''
 
 
-# model = Model.GRU(dim_u=2,dim_c=1,dim_hidden=2,dim_out=2,name='GRU')
+model = Model.GRU(dim_u=2,dim_c=1,dim_hidden=2,dim_out=2,name='GRU')
 
-# data['init_state_train'] = np.zeros((8,1,1))
-# data['init_state_val'] = np.zeros((2,1,1))
-# data['x_train'] = x[0:8,-1,:].reshape(8,1,1)
-# data['x_val'] = x[8::,-1,:].reshape(2,1,1)
+data['init_state_train'] = np.zeros((8,1,1))
+data['init_state_val'] = np.zeros((2,1,1))
+data['x_train'] = x[0:8,-1,:].reshape(8,1,1)
+data['x_val'] = x[8::,-1,:].reshape(2,1,1)
 
-# ident_res = ModelTraining(model,data,initializations = 2)
+param_bounds = {'dim_c': np.array([1,5]), 'dim_hidden':np.array([2,10])}
+options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
+n_particles = 5
+initializations = 5
+s_opts = {"max_iter": 10, "print_level":0}
+
+PSO_problem, hist = HyperParameterPSO(model,data,param_bounds,n_particles,
+                            options,initializations,p_opts=None,s_opts=s_opts)
 
 
 

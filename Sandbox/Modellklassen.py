@@ -43,7 +43,7 @@ class InjectionMouldingMachine():
         for key in self.Führungsgrößen.keys():
             control.append(self.Führungsgrößen[key](opti_vars,k))
         
-        control = vcat(control)
+        control = cs.vcat(control)
 
         return control
     
@@ -65,8 +65,7 @@ class Part():
 
 class MLP():
     """
-    Modell des Bauteils, welches die einwirkenden Prozessgrößen auf die 
-    resultierenden Bauteilqualität abbildet.    
+    
     """
 
     def __init__(self,dim_u,dim_x,dim_hidden,name):
@@ -77,41 +76,6 @@ class MLP():
         self.name = name
         
         self.Initialize()
-
-   
-    def OneStepPrediction(self,x0,u0,params=None):
-        # Casadi Function needs list of parameters as input
-        if params==None:
-            params = self.Parameters
-        
-        params_new = []
-            
-        for name in  self.Function.name_in():
-            try:
-                params_new.append(params[name])                      # Parameters are already in the right order as expected by Casadi Function
-            except:
-                continue
-        
-        x1 = self.Function(x0,u0,*params_new)     
-                              
-        return x1
-   
-    def Simulation(self,x0,u,params=None):
-        # Casadi Function needs list of parameters as input
-        
-        x = []
-
-        # initial states
-        x.append(x0)
-                      
-        # Simulate Model
-        for k in range(u.shape[0]):
-            x.append(self.OneStepPrediction(x[k],u[k,:],params))
-        
-        # Concatenate list to casadiMX
-        x = hcat(x).T    
-       
-        return x
 
     def Initialize(self):
                 
@@ -152,6 +116,42 @@ class MLP():
             self.Function = cs.Function(name, input, output, input_names,output_names)
             
             return None
+   
+    def OneStepPrediction(self,x0,u0,params=None):
+        # Casadi Function needs list of parameters as input
+        if params==None:
+            params = self.Parameters
+        
+        params_new = []
+            
+        for name in  self.Function.name_in():
+            try:
+                params_new.append(params[name])                      # Parameters are already in the right order as expected by Casadi Function
+            except:
+                continue
+        
+        x1 = self.Function(x0,u0,*params_new)     
+                              
+        return x1
+   
+    def Simulation(self,x0,u,params=None):
+        # Casadi Function needs list of parameters as input
+        
+        x = []
+
+        # initial states
+        x.append(x0)
+                      
+        # Simulate Model
+        for k in range(u.shape[0]):
+            x.append(self.OneStepPrediction(x[k],u[k,:],params))
+        
+        # Concatenate list to casadiMX
+        x = cs.hcat(x).T    
+       
+        return x
+
+
     
 def logistic(x):
     
@@ -169,7 +169,20 @@ class GRU():
         
         self.dim_u = dim_u
         self.dim_c = dim_c
+        self.dim_hidden = dim_hidden
         self.dim_out = dim_out
+        self.name = name
+        
+        self.Initialize()  
+ 
+
+    def Initialize(self):
+        
+        dim_u = self.dim_u
+        dim_c = self.dim_c
+        dim_hidden = self.dim_hidden
+        dim_out = self.dim_out
+        name = self.name      
         
         u = cs.MX.sym('u',dim_u,1)
         c = cs.MX.sym('c',dim_c,1)
@@ -228,6 +241,8 @@ class GRU():
         output_names = ['c_new','x_new']
     
         self.Function = cs.Function(name, input, output, input_names,output_names)
+
+        return None
     
     def OneStepPrediction(self,c0,u0,params=None):
         # Casadi Function needs list of parameters as input
@@ -249,6 +264,9 @@ class GRU():
     def Simulation(self,c0,u,params=None):
         # Casadi Function needs list of parameters as input
         
+        # print('GRU Simulation ignores given initial state, initial state is set to zero!')
+        c0 = np.zeros((self.dim_c,1))
+        
         c = []
         x = []
         
@@ -262,7 +280,7 @@ class GRU():
             x.append(x_new)
         
         # Concatenate list to casadiMX
-        c = hcat(c).T    
-        x = hcat(x).T
+        c = cs.hcat(c).T    
+        x = cs.hcat(x).T
         
         return x[-1]

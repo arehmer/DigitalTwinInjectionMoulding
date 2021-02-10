@@ -43,8 +43,8 @@ class DiscreteBoundedPSO(BinaryPSO):
         ----------
         n_particles : int
             number of particles in the swarm.
-        dimensions : int
-            number of dimensions in the space.
+        dimensions_discrete : int
+            number of discrete dimensions of the search space.
         options : dict with keys :code:`{'c1', 'c2', 'w', 'k', 'p'}`
             a dictionary containing the parameters for the specific
             optimization technique
@@ -61,7 +61,7 @@ class DiscreteBoundedPSO(BinaryPSO):
                     the Minkowski p-norm to use. 1 is the
                     sum-of-absolute values (or L1 distance) while 2 is
                     the Euclidean (or L2) distance.
-        bounds : tuple of numpy.ndarray, optional
+        bounds : tuple of numpy.ndarray
             a tuple of size 2 where the first entry is the minimum bound while
             the second entry is the maximum bound. Each array must be of shape
             :code:`(dimensions,)`.
@@ -90,7 +90,7 @@ class DiscreteBoundedPSO(BinaryPSO):
         
         self.dimensions_discrete = dimensions_discrete
         
-        self.bits,self.bounds = self.translate_discrete_to_binary(
+        self.bits,self.bounds = self.discretePSO_to_binaryPSO(
             dimensions_discrete,bounds)
         
         
@@ -235,17 +235,19 @@ class DiscreteBoundedPSO(BinaryPSO):
 
         return (final_best_cost, final_best_pos)
     
-    def translate_discrete_to_binary(self,dimensions,bounds):
+    def discretePSO_to_binaryPSO(self,dimensions_discrete,bounds):
         """
-        Calculates the number of bits necessary to represent a discrete
-        optimization problem with "dimensions" number of discrete variables
-        as a binary optimization problem with a certain number of bits and
-        adjusts bounds accordingly
+        Translate a discrete PSO-problem into a binary PSO-problem by
+        calculating the number of bits necessary to represent the discrete
+        optimization problem with "dimensions_discrete" number of discrete
+        variables as a binary optimization problem. The bounds are encoded in 
+        the binary representation and might be tightened.
         
         Parameters
         ----------  
-        dimensions: integer, number of discrete variables
-        bounds : tuple of numpy.ndarray, optional
+        dimensions_discrete: integer
+            dimension of the discrete search space.
+        bounds : tuple of numpy.ndarray
             a tuple of size 2 where the first entry is the minimum bound while
             the second entry is the maximum bound. Each array must be of shape
             :code:`(dimensions,)`.
@@ -253,7 +255,7 @@ class DiscreteBoundedPSO(BinaryPSO):
         
         bits = []
         
-        for n in range(0,dimensions):
+        for n in range(0,dimensions_discrete):
             
             # Number of bits required rounding down!
             bits.append(int(np.log10(bounds[1][n]-bounds[0][n]+1) / np.log10(2)))
@@ -276,12 +278,12 @@ class DiscreteBoundedPSO(BinaryPSO):
         
         cum_sum = 0
         
-        for i in range(0,len(self.bits)):
+        for i in range(0,self.dimensions_discrete):
             
             bit = self.bits[i]
             lb = self.bounds[0][i]
             
-            discrete_position[:,cum_sum:bit] = lb + \
+            discrete_position[:,[i]] = lb + \
             self.bool2int(binary_position[:,cum_sum:cum_sum+bit])
             
             cum_sum = cum_sum + bit
@@ -293,6 +295,10 @@ class DiscreteBoundedPSO(BinaryPSO):
         return binary_position    
                     
     def bool2int(self,x):
+        """
+        Converts a binary variable represented by an array x (row vector) into
+        an integer value
+        """
         
         x_int = np.zeros((x.shape[0],1))
         
@@ -305,20 +311,7 @@ class DiscreteBoundedPSO(BinaryPSO):
             x_int[row] = row_int
         
         return x_int          
-        
-    # def float_to_binary(x, m, n):
-    #     """Convert the float value `x` to a binary string of length `m + n`
-    #     where the first `m` binary digits are the integer part and the last
-    #     'n' binary digits are the fractional part of `x`.
-    #     """
-    #     x_scaled = round(x * 2 ** n)
-    #     return '{:0{}b}'.format(x_scaled, m + n)
     
-    # def binary_to_float(bstr, m, n):
-    #     """Convert a binary string in the format given above to its float
-    #     value.
-    #     """
-    #     return int(bstr, 2) / 2 ** n        
         
      
         
