@@ -144,10 +144,10 @@ class MLP():
                       
         # Simulate Model
         for k in range(u.shape[0]):
-            x.append(self.OneStepPrediction(x[k],u[k,:],params))
+            x.append(self.OneStepPrediction(x[k],u[[k],:],params))
         
         # Concatenate list to casadiMX
-        x = cs.hcat(x).T    
+        x = cs.vcat(x) 
        
         return x
 

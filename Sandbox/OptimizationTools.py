@@ -318,7 +318,7 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
     # Delete file with intermediate results
     os.remove(model.name +'/' + 'HyperParamPSO_hist.pkl')
     
-    return PSO_problem, hist
+    return hist
 
 def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     """
