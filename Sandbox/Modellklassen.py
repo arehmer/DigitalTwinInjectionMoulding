@@ -24,28 +24,32 @@ class InjectionMouldingMachine():
         self.Fuehrungsparameter = {}
         self.Führungsgrößen = {}
         
-        # self.ModelParamsInject = {}
-        # self.ModelParamsPress = {}
-        # self.ModelParamsCool = {}   
+        self.RefTrajectoryParams = None
+        # self.RefParamsPress = None
+        # self.RefParamsCool = None
+        
+        self.RefTrajectoryInject = None
+        self.RefTrajectoryPress = None
+        self.RefTrajectoryCool = None 
 
         self.ModelInject = None
         self.ModelPress = None
         self.ModelCool = None
         
-    def ControlInput(self,opti_vars,k):
-        """
-        Übersetzt durch Maschinenparameter parametrierte
-        Führungsgrößenverläufe in optimierbare control inputs
-        """
+    # def ControlInput(self,opti_vars,k):
+    #     """
+    #     Übersetzt durch Maschinenparameter parametrierte
+    #     Führungsgrößenverläufe in optimierbare control inputs
+    #     """
         
-        control = []
+    #     control = []
                 
-        for key in self.Führungsgrößen.keys():
-            control.append(self.Führungsgrößen[key](opti_vars,k))
+    #     for key in self.Führungsgrößen.keys():
+    #         control.append(self.Führungsgrößen[key](opti_vars,k))
         
-        control = cs.vcat(control)
+    #     control = cs.vcat(control)
 
-        return control
+    #     return control
     
 
 

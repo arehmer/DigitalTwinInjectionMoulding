@@ -50,24 +50,61 @@ def SimulateModel(model,x,u,params=None):
     x_new = model.Function(x,u,*params_new)     
                           
     return x_new
-   
-    
-def CreateOptimVariables(opti, param_dict):
-    
-    Parameter = {}
 
-    for key in param_dict.keys():
-        
-        dim0 = param_dict[key].shape[0]
-        dim1 = param_dict[key].shape[1]
-        
-        Parameter[key] = opti.variable(dim0,dim1)
-
-    opti_vars = Parameter
+def ControlInput(ref_trajectories,opti_vars,k):
+    """
+    Übersetzt durch Maschinenparameter parametrierte
+    Führungsgrößenverläufe in optimierbare control inputs
+    """
     
+    control = []
+            
+    for key in ref_trajectories.keys():
+        control.append(ref_trajectories[key](opti_vars,k))
+    
+    control = cs.vcat(control)
+
+    return control   
+    
+def CreateOptimVariables(opti, RefTrajectoryParams):
+    """
+    Defines all parameters, which parameterize reference trajectories, as
+    opti variables and puts them in a large dictionary
+    """
+    
+    # Create empty dictionary
+    opti_vars = {}
+    
+    for param in RefTrajectoryParams.keys():
+        
+        dim0 = RefTrajectoryParams[param].shape[0]
+        dim1 = RefTrajectoryParams[param].shape[1]
+        
+        opti_vars[param] = opti.variable(dim0,dim1)
+    
+    # Create one parameter dictionary for each phase
+    # opti_vars['RefParamsInject'] = {}
+    # opti_vars['RefParamsPress'] = {}
+    # opti_vars['RefParamsCool'] = {}
+
+    # for key in opti_vars.keys():
+        
+    #     param_dict = getattr(process_model,key)
+        
+    #     if param_dict is not None:
+        
+    #         for param in param_dict.keys():
+                
+    #             dim0 = param_dict[param].shape[0]
+    #             dim1 = param_dict[param].shape[1]
+                
+    #             opti_vars[key][param] = opti.variable(dim0,dim1)
+    #     else:
+    #         opti_vars[key] = None
+  
     return opti_vars
 
-def MultiStageOptimization(model,ref):
+def MultiStageOptimization(process_model,ref):
     #Multi Stage Optimization for solving the optimal control problem
     
  
@@ -75,14 +112,14 @@ def MultiStageOptimization(model,ref):
     opti = cs.Opti()
     
     # Translate Maschinenparameter into opti.variables
-    Fuehrungsparameter_opti = CreateOptimVariables(opti, model.Parameters)
+    ref_params_opti = CreateOptimVariables(opti, 
+                                           process_model.RefTrajectoryParams)
     
     # Number of time steps
     N = ref['data'].shape[0]
     
     # Create decision variables for states
-    NumStates = model.ModelInject.dim_x
-    X = opti.variable(N,NumStates)
+    X = opti.variable(N,process_model.NumStates)
         
     # Initial Constraints
     opti.subject_to(X[0]==ref['data'][0])
@@ -92,12 +129,21 @@ def MultiStageOptimization(model,ref):
     for k in range(N-1):
         
         if k<=ref['Umschaltpunkt']:
-            U = model.ControlInput(Fuehrungsparameter_opti,k)
-            opti.subject_to(SimulateModel(model.ModelInject,X[k],U)==X[k+1])
-
+            U = ControlInput(process_model.RefTrajectoryInject,
+                             ref_params_opti,k)
+            
+            # opti.subject_to(SimulateModel(process_model.ModelInject,X[k],U)==X[k+1])
+            opti.subject_to(
+                process_model.ModelInject.OneStepPrediction(X[k],U)==X[k+1])
+            
         elif k>ref['Umschaltpunkt']:
-            U = model.ControlInput(Fuehrungsparameter_opti,k)
-            opti.subject_to(SimulateModel(model.ModelPress,X[k],U)==X[k+1])
+            U = ControlInput(process_model.RefTrajectoryPress,
+                             ref_params_opti,k)
+            # opti.subject_to(SimulateModel(process_model.ModelPress,X[k],U)==X[k+1])
+            
+            opti.subject_to(
+                process_model.ModelPress.OneStepPrediction(X[k],U)==X[k+1])            
+
 
         else:
              U=None # HIER MUSS EIN MODELL FÜR DIE ABKÜHLPHASE HIN
@@ -113,8 +159,8 @@ def MultiStageOptimization(model,ref):
     
     
     # Set initial values for Machine Parameters
-    for key in Fuehrungsparameter_opti:
-        opti.set_initial(Fuehrungsparameter_opti[key],model.Fuehrungsparameter[key])
+    for key in ref_params_opti:
+        opti.set_initial(ref_params_opti[key],process_model.RefTrajectoryParams[key])
 
     # Set initial values for state trajectory ??
     # for key in model.Maschinenparameter_opti:
@@ -130,7 +176,7 @@ def MultiStageOptimization(model,ref):
     sol = opti.solve()
     
     # Extract real values from solution
-    values = OptimValues_to_dict(Fuehrungsparameter_opti,sol)
+    values = OptimValues_to_dict(ref_params_opti,sol)
     values['X'] = sol.value(X)
 
     

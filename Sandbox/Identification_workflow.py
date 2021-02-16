@@ -12,40 +12,40 @@ from OptimizationTools import *
 from miscellaneous import *
 
 ''' Generate Identification Data for first phase '''
-# N = 100
+N = 100
 
-# u = np.zeros((10,N-1,2))
-# x = np.zeros((10,N,2))
+u = np.zeros((10,N-1,2))
+x = np.zeros((10,N,2))
 
-# for i in range(0,10):
+for i in range(0,10):
 
-#     x_i = np.zeros((N,2))
-#     u_i = np.random.normal(0,1,(N-1,2))
+    x_i = np.zeros((N,2))
+    u_i = np.random.normal(0,1,(N-1,2))
 
-#     for k in range(1,100):
-#         x_i[k,0] = 0.7*x_i[k-1,0]**2 - 0.1*x_i[k-1,1]**2 + 0.1*u_i[k-1,0] 
-#         x_i[k,1] = 0.3*x_i[k-1,0]**2 + 0.3*x_i[k-1,1]**2 - 0.5*u_i[k-1,1]
-#     u[i,:,:] = u_i
-#     x[i,:,:] = x_i
-
-
-# init_state = x[:,0,:].reshape(10,1,2) 
-# data = {'u_train':u[0:8], 'x_train':x[0:8],'init_state_train': init_state[0:8],
-#         'u_val':u[8::], 'x_val':x[8::],'init_state_val': init_state[8::]}
+    for k in range(1,100):
+        x_i[k,0] = 0.7*x_i[k-1,0]**2 - 0.1*x_i[k-1,1]**2 + 0.1*u_i[k-1,0] 
+        x_i[k,1] = 0.3*x_i[k-1,0]**2 + 0.3*x_i[k-1,1]**2 - 0.5*u_i[k-1,1]
+    u[i,:,:] = u_i
+    x[i,:,:] = x_i
 
 
+init_state = x[:,0,:].reshape(10,1,2) 
+data = {'u_train':u[0:8], 'x_train':x[0:8],'init_state_train': init_state[0:8],
+        'u_val':u[8::], 'x_val':x[8::],'init_state_val': init_state[8::]}
 
-# ''' Estimate MLP model for first phase '''
-# model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='Inject')
 
-# param_bounds = {'dim_hidden':np.array([5,10])}
-# options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
-# n_particles = 5
-# initializations = 5
-# s_opts = {"max_iter": 100, "print_level":0}
 
-# results_inject = HyperParameterPSO(model,data,param_bounds,n_particles,
-#                             options,initializations,p_opts=None,s_opts=s_opts)
+''' Estimate MLP model for first phase '''
+model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='Inject')
+
+param_bounds = {'dim_hidden':np.array([5,10])}
+options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
+n_particles = 5
+initializations = 5
+s_opts = {"max_iter": 10, "print_level":0}
+
+results_inject = HyperParameterPSO(model,data,param_bounds,n_particles,
+                            options,initializations,p_opts=None,s_opts=s_opts)
 
 # model.dim_hidden = 6
 # model.Initialize()
@@ -86,23 +86,33 @@ param_bounds = {'dim_hidden':np.array([5,10])}
 options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
 n_particles = 5
 initializations = 5
-s_opts = {"max_iter": 100, "print_level":0}
+s_opts = {"max_iter": 10, "print_level":0}
 
 results_press = HyperParameterPSO(model,data,param_bounds,n_particles,
                             options,initializations,p_opts=None,s_opts=s_opts)
 
+
+
+ProcessModel = Model.InjectionMouldingMachine()
+
+PressurePhaseModel = Model.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='PressurePhaseModel')
+PressurePhaseModel.Parameters = results_press.loc[8,'model_params']
+
+InjectionPhaseModel = Model.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='InjectionPhaseModel')
+InjectionPhaseModel.Parameters = results_inject.loc[8,'model_params']
+
+
+
+
+ProcessModel.ModelInject = InjectionPhaseModel
+ProcessModel.ModelPress = PressurePhaseModel
+
+
+pkl.dump(ProcessModel,open('ProcessModel.pkl','wb'))
+
 # model.dim_hidden = 6
 # model.Initialize()
 # model.Parameters = results.loc[6,'model_params']
-
-
-
-
-
-
-
-
-
 
 
 
