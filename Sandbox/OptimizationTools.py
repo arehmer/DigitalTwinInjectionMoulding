@@ -209,7 +209,7 @@ def ModelTraining(model,data,initializations = 10, BFR=False, p_opts=None, s_opt
         
         # Evaluate on Validation data
         u_val = data['u_val']
-        x_ref_val = data['x_val']
+        y_ref_val = data['y_val']
         init_state_val = data['init_state_val']
 
         # Loop over all experiments
@@ -219,10 +219,10 @@ def ModelTraining(model,data,initializations = 10, BFR=False, p_opts=None, s_opt
         for j in range(0,u_val.shape[0]):   
                
             # Simulate Model
-            x = model.Simulation(init_state_val[j],u_val[j])
-            x = np.array(x)
+            y = model.Simulation(init_state_val[j],u_val[j])
+            y = np.array(y)
                      
-            e = e + cs.sumsqr(x_ref_val[j] - x) 
+            e = e + cs.sumsqr(y_ref_val[j] - y) 
         
         # Calculate mean error over all validation batches
         e = e / u_val.shape[0]
@@ -373,7 +373,7 @@ def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     
     
     u = data['u_train']
-    x_ref = data['x_train']
+    y_ref = data['y_train']
     init_state = data['init_state_train']
     
     # Create Instance of the Optimization Problem
@@ -387,9 +387,9 @@ def ModelParameterEstimation(model,data,p_opts=None,s_opts=None):
     for i in range(0,u.shape[0]):   
            
         # Simulate Model
-        x = model.Simulation(init_state[i],u[i],params_opti)
+        y = model.Simulation(init_state[i],u[i],params_opti)
         
-        e = e + sumsqr(x_ref[i,:,:] - x)
+        e = e + sumsqr(y_ref[i,:,:] - y)
     
     opti.minimize(e)
     

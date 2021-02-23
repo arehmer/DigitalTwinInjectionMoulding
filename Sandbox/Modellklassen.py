@@ -66,6 +66,116 @@ class Part():
         self.ModelQuality = None
         self.ModelParamsQuality = {}    
 
+class LinearSSM():
+    """
+    
+    """
+
+    def __init__(self,dim_u,dim_x,dim_y,name):
+        
+        self.dim_u = dim_u
+        self.dim_x = dim_x
+        self.dim_y = dim_y
+        self.name = name
+        
+        self.Initialize()
+
+    def Initialize(self):
+            
+            # For convenience of notation
+            dim_u = self.dim_u
+            dim_x = self.dim_x 
+            dim_y = self.dim_y             
+            name = self.name
+            
+            # Define input, state and output vector
+            u = cs.MX.sym('u',dim_u,1)
+            x = cs.MX.sym('x',dim_x,1)
+            y = cs.MX.sym('y',dim_y,1)
+            
+            # Define Model Parameters
+            A = cs.MX.sym('A',dim_x,dim_x)
+            B = cs.MX.sym('B',dim_x,dim_u)
+            C = cs.MX.sym('C',dim_y,dim_x)
+
+            
+            # Put all Parameters in Dictionary with random initialization
+            self.Parameters = {'A':np.random.rand(dim_x,dim_x),
+                               'B':np.random.rand(dim_x,dim_u),
+                               'C':np.random.rand(dim_y,dim_x)}
+        
+            # self.Input = {'u':np.random.rand(u.shape)}
+            
+            # Define Model Equations
+            x_new = cs.mtimes(A,x) + cs.mtimes(B,u)
+            y_new = cs.mtimes(C,x_new) 
+            
+            
+            input = [x,u,A,B,C]
+            input_names = ['x','u','A','B','C']
+            
+            output = [x_new,y_new]
+            output_names = ['x_new','y_new']  
+            
+            self.Function = cs.Function(name, input, output, input_names,output_names)
+            
+            return None
+   
+    def OneStepPrediction(self,x0,u0,params=None):
+        '''
+        Estimates the next state and output from current state and input
+        x0: Casadi MX, current state
+        u0: Casadi MX, current input
+        params: A dictionary of opti variables, if the parameters of the model
+                should be optimized, if None, then the current parameters of
+                the model are used
+        '''
+        
+        if params==None:
+            params = self.Parameters
+        
+        params_new = []
+            
+        for name in  self.Function.name_in():
+            try:
+                params_new.append(params[name])                      # Parameters are already in the right order as expected by Casadi Function
+            except:
+                continue
+        
+        x1,y1 = self.Function(x0,u0,*params_new)     
+                              
+        return x1,y1
+   
+    def Simulation(self,x0,u,params=None):
+        '''
+        A iterative application of the OneStepPrediction in order to perform a
+        simulation for a whole input trajectory
+        x0: Casadi MX, inital state a begin of simulation
+        u: Casadi MX,  input trajectory
+        params: A dictionary of opti variables, if the parameters of the model
+                should be optimized, if None, then the current parameters of
+                the model are used
+        '''
+
+        x = []
+        y = []
+
+        # initial states
+        x.append(x0)
+                      
+        # Simulate Model
+        for k in range(u.shape[0]):
+            x_new,y_new = self.OneStepPrediction(x[k],u[[k],:],params)
+            x.append(x_new)
+            y.append(y_new)
+        
+
+        # Concatenate list to casadiMX
+        y = cs.hcat(y).T    
+        x = cs.hcat(x).T
+       
+        return y
+
 
 class MLP():
     """

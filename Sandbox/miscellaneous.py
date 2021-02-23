@@ -14,7 +14,6 @@ def OptimValues_to_dict(optim_variables_dict,sol):
     values = {}
     
     for key in optim_variables_dict.keys():
-       print(key)
        dim0 = optim_variables_dict[key].shape[0]
        dim1 = optim_variables_dict[key].shape[1]
        

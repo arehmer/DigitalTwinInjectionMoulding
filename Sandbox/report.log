@@ -209,3 +209,4 @@
 2021-02-16 11:09:40,225 - DiscreteBoundedPSO - INFO - Optimization finished | best cost: 25.30171109677312, best pos: [1 1]
 2021-02-16 11:09:40,246 - DiscreteBoundedPSO - INFO - Optimize for 100 iters with {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k': 5, 'p': 1}
 2021-02-16 11:11:08,647 - DiscreteBoundedPSO - INFO - Optimization finished | best cost: 24.462343794815745, best pos: [1 1]
+2021-02-23 13:46:48,171 - matplotlib.legend - WARNING - No handles with labels found to put in legend.
