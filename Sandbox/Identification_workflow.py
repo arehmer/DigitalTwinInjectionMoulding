@@ -36,6 +36,7 @@ data = {'u_train':u[0:8], 'x_train':x[0:8],'init_state_train': init_state[0:8],
 
 
 ''' Estimate MLP model for first phase '''
+# Initialize Model
 model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='Inject')
 
 param_bounds = {'dim_hidden':np.array([5,10])}

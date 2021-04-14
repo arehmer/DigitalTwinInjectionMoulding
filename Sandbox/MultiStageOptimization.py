@@ -6,12 +6,7 @@ Created on Tue Nov 24 13:25:16 2020
 @author: alexander
 """
 
-
-
-
-
-
-                           # 'U2': lambda param,k: param['p1']}
+# 'U2': lambda param,k: param['p1']}
 
 
 

@@ -179,11 +179,31 @@ class LinearSSM():
 
 class MLP():
     """
-    
+    Implementation of a single-layered Feedforward Neural Network.
     """
 
     def __init__(self,dim_u,dim_x,dim_hidden,name):
+        """
+        Initialization procedure of the Feedforward Neural Network Architecture
         
+        
+        Parameters
+        ----------
+        dim_u : int
+            Dimension of the input, e.g. dim_u = 2 if input is a 2x1 vector
+        dim_x : int
+            Dimension of the state, e.g. dim_x = 3 if state is a 3x1 vector.
+        dim_hidden : int
+            Number of nonlinear neurons in the hidden layer, e.g. dim_hidden=10,
+            if NN is supposed to have 10 neurons in hidden layer.
+        name : str
+            Name of the model, e.g. name = 'InjectionPhaseModel'.
+
+        Returns
+        -------
+        None.
+
+        """
         self.dim_u = dim_u
         self.dim_hidden = dim_hidden
         self.dim_x = dim_x
@@ -192,47 +212,83 @@ class MLP():
         self.Initialize()
 
     def Initialize(self):
-                
-            dim_u = self.dim_u
-            dim_hidden = self.dim_hidden
-            dim_x = self.dim_x 
-            name = self.name
+        """
+        Defines the parameters of the model as symbolic casadi variables and 
+        the model equation as casadi function. Model parameters are initialized
+        randomly.
+
+        Returns
+        -------
+        None.
+
+        """   
+        dim_u = self.dim_u
+        dim_hidden = self.dim_hidden
+        dim_x = self.dim_x 
+        name = self.name
+    
+        u = cs.MX.sym('u',dim_u,1)
+        x = cs.MX.sym('x',dim_x,1)
         
-            u = cs.MX.sym('u',dim_u,1)
-            x = cs.MX.sym('x',dim_x,1)
-            
-            # Parameters
-            W_h = cs.MX.sym('W_h',dim_hidden,dim_u+dim_x)
-            b_h = cs.MX.sym('b_h',dim_hidden,1)
-            
-            W_o = cs.MX.sym('W_out',dim_x,dim_hidden)
-            b_o = cs.MX.sym('b_out',dim_x,1)
-            
-            # Put all Parameters in Dictionary with random initialization
-            self.Parameters = {'W_h':np.random.rand(W_h.shape[0],W_h.shape[1]),
-                               'b_h':np.random.rand(b_h.shape[0],b_h.shape[1]),
-                               'W_o':np.random.rand(W_o.shape[0],W_o.shape[1]),
-                               'b_o':np.random.rand(b_o.shape[0],b_o.shape[1])}
+        # Model Parameters
+        W_h = cs.MX.sym('W_h',dim_hidden,dim_u+dim_x)
+        b_h = cs.MX.sym('b_h',dim_hidden,1)
         
-            # self.Input = {'u':np.random.rand(u.shape)}
-            
-            # Equations
-            h =  cs.tanh(cs.mtimes(W_h,cs.vertcat(u,x))+b_h)
-            x_new = cs.mtimes(W_o,h)+b_o
-            
-            
-            input = [x,u,W_h,b_h,W_o,b_o]
-            input_names = ['x','u','W_h','b_h','W_o','b_o']
-            
-            output = [x_new]
-            output_names = ['x_new']  
-            
-            self.Function = cs.Function(name, input, output, input_names,output_names)
-            
-            return None
+        W_o = cs.MX.sym('W_out',dim_x,dim_hidden)
+        b_o = cs.MX.sym('b_out',dim_x,1)
+        
+        # Put all Parameters in Dictionary with random initialization
+        self.Parameters = {'W_h':np.random.rand(W_h.shape[0],W_h.shape[1]),
+                           'b_h':np.random.rand(b_h.shape[0],b_h.shape[1]),
+                           'W_o':np.random.rand(W_o.shape[0],W_o.shape[1]),
+                           'b_o':np.random.rand(b_o.shape[0],b_o.shape[1])}
+    
+       
+        # Model Equations
+        h =  cs.tanh(cs.mtimes(W_h,cs.vertcat(u,x))+b_h)
+        x_new = cs.mtimes(W_o,h)+b_o
+        
+        
+        input = [x,u,W_h,b_h,W_o,b_o]
+        input_names = ['x','u','W_h','b_h','W_o','b_o']
+        
+        output = [x_new]
+        output_names = ['x_new']  
+        
+        self.Function = cs.Function(name, input, output, input_names,output_names)
+        
+        return None
    
     def OneStepPrediction(self,x0,u0,params=None):
-        # Casadi Function needs list of parameters as input
+        """
+        OneStepPrediction() evaluates the model equation defined in 
+        self.Function()
+        
+        self.Function() takes initial state x0, input u0 and all model 
+        parameters as input. The model parameters can either be optimization
+        variables themselves (as in system identification) or the take specific 
+        values (when the estimated model is used for control)
+
+        Parameters
+        ----------
+        x0 : array-like with dimension [self.dim_x, 1]
+            initial state resp. state from last time-step
+        u0 : array-like with dimension [self.dim_u, 1]
+            input
+        params : dictionary, optional
+            params is None: This is the case during model based control,
+            self.Function() is evaluated with the numerical
+            values of the model parameters saved in self.Parameters
+            params is dictionary of opti.variables: During system identification
+            the model parameters are optimization variables themselves, so a 
+            dictionary of opti.variables is passed to self.Function()
+
+        Returns
+        -------
+        x1 : array-like with dimension [self.dim_x, 1]
+            output of the Feedforward Neural Network
+
+        """
         if params==None:
             params = self.Parameters
         
@@ -249,7 +305,25 @@ class MLP():
         return x1
    
     def Simulation(self,x0,u,params=None):
-        # Casadi Function needs list of parameters as input
+        """
+        Repeated call of self.OneStepPrediction() for a given input trajectory
+        
+
+        Parameters
+        ----------
+        x0 : array-like with dimension [self.dim_x, 1]
+            initial state resp
+        u : array-like with dimension [N,self.dim_u]
+            trajectory of input signal with length N
+        params : dictionary, optional
+            see self.OneStepPrediction()
+
+        Returns
+        -------
+        x : array-like with dimension [N+1,self.dim_x]
+            trajectory of output signal with length N+1 
+            
+        """
         
         x = []
 
@@ -275,12 +349,34 @@ def logistic(x):
 
 class GRU():
     """
-    Modell des Bauteils, welches die einwirkenden Prozessgrößen auf die 
-    resultierenden Bauteilqualität abbildet.    
+    Implementation of a Gated Recurrent Unit with a Feedforward Neural Network
+    as output
     """
 
     def __init__(self,dim_u,dim_c,dim_hidden,dim_out,name):
+        """
+        Initialization procedure of the GRU Architecture
         
+        Parameters
+        ----------
+        dim_u : int
+            Dimension of the input, e.g. dim_u = 2 if input is a 2x1 vector
+        dim_c : int
+            Dimension of the cell-state, i.e. the internal state of the GRU,
+            e.g. dim_c = 2 if cell-state is a 2x1 vector
+        dim_hidden : int
+            Number of nonlinear neurons in the hidden layer, e.g. dim_hidden=10,
+            if output network is supposed to have 10 neurons in hidden layer.           
+        dim_out : int
+            Dimension of the output, e.g. dim_out = 3 if output is a 3x1 vector.
+        name : str
+            Name of the model, e.g. name = 'QualityModel'.
+
+        Returns
+        -------
+        None.
+
+        """        
         self.dim_u = dim_u
         self.dim_c = dim_c
         self.dim_hidden = dim_hidden
@@ -291,7 +387,16 @@ class GRU():
  
 
     def Initialize(self):
-        
+        """
+        Defines the parameters of the model as symbolic casadi variables and 
+        the model equation as casadi function. Model parameters are initialized
+        randomly.
+
+        Returns
+        -------
+        None.
+
+        """          
         dim_u = self.dim_u
         dim_c = self.dim_c
         dim_hidden = self.dim_hidden
@@ -359,7 +464,36 @@ class GRU():
         return None
     
     def OneStepPrediction(self,c0,u0,params=None):
-        # Casadi Function needs list of parameters as input
+        """
+        OneStepPrediction() evaluates the model equation defined in 
+        self.Function()
+        
+        self.Function() takes initial cell-state c0, input u0 and all model 
+        parameters as input. The model parameters can either be optimization
+        variables themselves (as in system identification) or the take specific 
+        values (when the estimated model is used for control)
+
+        Parameters
+        ----------
+        c0 : array-like with dimension [self.dim_c, 1]
+            initial cell-state resp. state from last time-step
+        u0 : array-like with dimension [self.dim_u, 1]
+            input
+        params : dictionary, optional
+            params is None: This is the case during model based control,
+            self.Function() is evaluated with the numerical
+            values of the model parameters saved in self.Parameters
+            params is dictionary of opti.variables: During system identification
+            the model parameters are optimization variables themselves, so a 
+            dictionary of opti.variables is passed to self.Function()
+
+        Returns
+        -------
+        c1 : array-like with dimension [self.dim_c, 1]
+            new cell-state
+        x1 : array-like with dimension [self.dim_x, 1]
+            output of the Feedforward Neural Network
+        """
         if params==None:
             params = self.Parameters
         
@@ -376,9 +510,30 @@ class GRU():
         return c1,x1
    
     def Simulation(self,c0,u,params=None):
-        # Casadi Function needs list of parameters as input
+        """
+        Repeated call of self.OneStepPrediction() for a given input trajectory
         
-        # print('GRU Simulation ignores given initial state, initial state is set to zero!')
+
+        Parameters
+        ----------
+        c0 : array-like with dimension [self.dim_c, 1]
+            initial cell-state
+        u : array-like with dimension [N,self.dim_u]
+            trajectory of input signal with length N
+        params : dictionary, optional
+            see self.OneStepPrediction()
+
+        Returns
+        -------
+        x : array-like with dimension [N+1,self.dim_x]
+            trajectory of output signal with length N+1 
+            
+        """
+        
+        # Is that necessary?
+        print('GRU Simulation ignores given initial state, initial state is set to zero!')
+        
+        
         c0 = np.zeros((self.dim_c,1))
         
         c = []

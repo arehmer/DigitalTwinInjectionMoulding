@@ -24,6 +24,11 @@ from pyswarms.utils.reporter import Reporter
 
 
 class DiscreteBoundedPSO(BinaryPSO):
+    """
+    This class is based on the Binary PSO class. It extends the BinaryPSO class
+    by a function which allows the conversion of discrete optimization variables
+    into binary variables, so that discrete optimization problems can be solved 
+    """
     def __init__(
         self,
         n_particles,
@@ -168,8 +173,10 @@ class DiscreteBoundedPSO(BinaryPSO):
             
             # Compute cost for current position and personal best
             
-            # Binary swarm postitions need to be transformed to discrete swarm
-            # postitions first (only positions are transformed!)
+            ''' Binary swarm postitions need to be transformed to discrete swarm
+                postitions first, because the objective function expects discrete
+                values (only positions are transformed!), original binary
+                position is saved in binary_swarm_position'''
             binary_swarm_position = self.BinarySwarmPositions_to_DiscreteSwarmPositions()
                    
             # Evaluate Cost Function
@@ -177,7 +184,8 @@ class DiscreteBoundedPSO(BinaryPSO):
                 self.swarm, objective_func, pool, **kwargs
             )
             
-            # Transform discrete swarm positions back to binary positions
+            ''' Transform discrete swarm positions back to binary positions, 
+            because the PSO works on binary particles'''
             self.swarm.position = binary_swarm_position
             
             self.swarm.pbest_pos, self.swarm.pbest_cost = compute_pbest(
