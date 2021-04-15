@@ -7,10 +7,10 @@ import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
 
-from miscellaneous import *
+# from miscellaneous import *
 
 
-class InjectionMouldingMachine():
+class ProcessModel():
     """
     Modell der Spritzgießmaschine, welches Führungsgrößen (parametriert durch 
     an der Maschine einstellbare Größen) auf die resultierenden Prozessgrößen

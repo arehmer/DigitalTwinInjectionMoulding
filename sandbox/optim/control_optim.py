@@ -15,7 +15,7 @@ import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-from DiscreteBoundedPSO import DiscreteBoundedPSO
+# from DiscreteBoundedPSO import DiscreteBoundedPSO
 import pandas as pd
 import pickle as pkl
 
@@ -31,7 +31,7 @@ import pickle as pkl
 # see http://stackoverflow.com/questions/1907993/autoreload-of-modules-in-ipython
 
 
-from miscellaneous import *
+# from miscellaneous import *
 
 
 # def SimulateModel(model,x,u,params=None):

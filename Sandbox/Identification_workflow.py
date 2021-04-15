@@ -2,18 +2,19 @@
 from sys import path
 path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 
-# import casadi as cs
+import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from models.NN import MLP
-from optim.param_optim import HyperParameterPSO,ModelParameterEstimation
+from optim.param_optim import HyperParameterPSO,ModelParameterEstimation,ModelTraining
 
 # from miscellaneous import *
 
 ''' Generate dummy Identification Data for first phase '''
 N = 100
+
 
 u = np.zeros((10,N-1,2))
 x = np.zeros((10,N,2))
@@ -43,8 +44,24 @@ model = MLP(dim_u=2,dim_x=2,dim_hidden=10,name='Inject')
 # model = Model.LinearSSM(dim_u=2,dim_x=2,dim_y=2,name='Inject')
 s_opts = {"max_iter": 1000, "print_level":0}
 # y = model.Simulation(data['init_state_train'][0],data['u_train'][0])
-values = ModelParameterEstimation(model,data,p_opts=None,s_opts=s_opts)
+# identified_parameters = ModelParameterEstimation(model,data,p_opts=None,s_opts=s_opts)
 
+identification_results = ModelTraining(model,data,initializations = 5)
+
+model.Parameters = identified_parameters
+
+x0_train = data['init_state_train'][0]
+u_train =  data['u_train'][0]
+y_train =  data['y_train'][0]
+
+y_est_train = model.Simulation(x0_train,u_train)
+y_est_train = np.array(y_est_train)
+
+plt.plot(y_train,label='True output')                                              # Plot True data
+plt.plot(y_est_train,label='Est. output')                                          # Plot Model Output
+plt.plot(y_train-y_est_train,label='Simulation Error')                             # Plot Error between model and true system (its almost zero)
+plt.legend()
+plt.show()
 
 """
 param_bounds = {'dim_hidden':np.array([5,20])}

@@ -6,9 +6,9 @@ from casadi import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-import Modellklassen as Model
-from OptimizationTools import *
-from miscellaneous import *
+from models import injection_models, NN
+from optim import control_optim
+# from miscellaneous import *
 
 
 ''' Load identified models '''
@@ -17,7 +17,7 @@ ProcessModel = Model.InjectionMouldingMachine()
 results_press = pkl.load(open('results_press','rb'))
 results_inject = pkl.load(open('results_inject','rb'))
 
-
+"""
 PressurePhaseModel = Model.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='PressurePhaseModel')
 PressurePhaseModel.Parameters = results_press.loc[8,'model_params'].values[0][0]
 
