@@ -2,16 +2,17 @@
 from sys import path
 path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
 
-import casadi as cs
+# import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import Modellklassen as Model
-from OptimizationTools import *
-from miscellaneous import *
+from models.NN import MLP
+from optim.param_optim import HyperParameterPSO,ModelParameterEstimation
 
-''' Generate Identification Data for first phase '''
+# from miscellaneous import *
+
+''' Generate dummy Identification Data for first phase '''
 N = 100
 
 u = np.zeros((10,N-1,2))
@@ -29,25 +30,32 @@ for i in range(0,10):
     x[i,:,:] = x_i
 
 
-init_state = x[:,0,:].reshape(10,1,2) 
-data = {'u_train':u[0:8], 'x_train':x[0:8],'init_state_train': init_state[0:8],
-        'u_val':u[8::], 'x_val':x[8::],'init_state_val': init_state[8::]}
+init_state = x[:,0,:].reshape(10,2,1) 
+data = {'u_train':u[0:8], 'y_train':x[0:8],'init_state_train': init_state[0:8],
+        'u_val':u[8::], 'y_val':x[8::],'init_state_val': init_state[8::]}
 
 
 
 ''' Estimate MLP model for first phase '''
 # Initialize Model
-model = Model.MLP(dim_u=2,dim_x=1,dim_hidden=10,name='Inject')
+model = MLP(dim_u=2,dim_x=2,dim_hidden=10,name='Inject')
+# y = model.Simulation(data['init_state_train'][0],data['u_train'][0])
+# model = Model.LinearSSM(dim_u=2,dim_x=2,dim_y=2,name='Inject')
+s_opts = {"max_iter": 1000, "print_level":0}
+# y = model.Simulation(data['init_state_train'][0],data['u_train'][0])
+values = ModelParameterEstimation(model,data,p_opts=None,s_opts=s_opts)
 
-param_bounds = {'dim_hidden':np.array([5,10])}
+
+"""
+param_bounds = {'dim_hidden':np.array([5,20])}
 options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
 n_particles = 5
-initializations = 5
-s_opts = {"max_iter": 10, "print_level":0}
+initializations = 2
+s_opts = {"max_iter": 100, "print_level":0}
 
 results_inject = HyperParameterPSO(model,data,param_bounds,n_particles,
                             options,initializations,p_opts=None,s_opts=s_opts)
-
+"""
 # model.dim_hidden = 6
 # model.Initialize()
 # model.Parameters = results_inject.loc[6,'model_params']
@@ -57,6 +65,7 @@ results_inject = HyperParameterPSO(model,data,param_bounds,n_particles,
 ##############################################################################
 
 ''' Generate Identification Data for second phase '''
+"""
 N = 100
 
 u = np.zeros((10,N-1,2))
@@ -154,3 +163,4 @@ pkl.dump(ProcessModel,open('ProcessModel.pkl','wb'))
 
 # plt.plot(x_train[0,-1,:])
 # plt.plot(x)
+"""

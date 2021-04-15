@@ -335,7 +335,7 @@ class MLP():
             x.append(self.OneStepPrediction(x[k],u[[k],:],params))
         
         # Concatenate list to casadiMX
-        x = cs.vcat(x) 
+        x = cs.hcat(x).T 
        
         return x
 
