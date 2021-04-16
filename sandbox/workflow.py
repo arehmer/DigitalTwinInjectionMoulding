@@ -7,21 +7,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models import injection_models, NN
-from optim import control_optim
+from optim.control_optim import MultiStageOptimization
+import pickle as pkl
 # from miscellaneous import *
 
 
 ''' Load identified models '''
-ProcessModel = Model.InjectionMouldingMachine()
+ProcessModel = injection_models.ProcessModel()
 
 results_press = pkl.load(open('results_press','rb'))
 results_inject = pkl.load(open('results_inject','rb'))
 
-"""
-PressurePhaseModel = Model.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='PressurePhaseModel')
+
+PressurePhaseModel = NN.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='PressurePhaseModel')
 PressurePhaseModel.Parameters = results_press.loc[8,'model_params'].values[0][0]
 
-InjectionPhaseModel = Model.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='InjectionPhaseModel')
+InjectionPhaseModel = NN.MLP(dim_u=2,dim_x=1,dim_hidden=8,name='InjectionPhaseModel')
 InjectionPhaseModel.Parameters = results_inject.loc[8,'model_params'].values[0][0]
 
 
@@ -29,8 +30,8 @@ ProcessModel.ModelInject = InjectionPhaseModel
 ProcessModel.ModelPress = PressurePhaseModel
 
 ''' Parameterize reference trajectories '''
-model = Model.InjectionMouldingMachine()
-partmodel = Model.Part()
+model = injection_models.ProcessModel()
+# partmodel = Model.Part()
 
 N=60
 

@@ -19,6 +19,8 @@ import math
 import pandas as pd
 import pickle as pkl
 
+from .common import OptimValues_to_dict
+
 # Import sphere function as objective function
 #from pyswarms.utils.functions.single_obj import sphere as f
 
@@ -104,10 +106,23 @@ def CreateOptimVariables(opti, RefTrajectoryParams):
   
     return opti_vars
 
-def MultiStageOptimization(process_model,ref):
-    #Multi Stage Optimization for solving the optimal control problem
+def MultiStageOptimization(process_model,target):
     
- 
+    subsystems = process_model.subsystems
+    switching_instances = process_model.switching_instances
+    reference = process_model.reference
+    ref_params = process_model.ref_params
+
+    
+    # Plausibility Check
+    if len(subsystems) != len(reference):
+        print('Number of Subsystems does not equal number of reference signals \
+              to be optmized!')
+    if len(switching_instances) != len(subsystems)-1:
+        print('Number of switching instances does not fit number of Subsystems!')    
+        
+        ''' Check if dimension of subsystem outputs is equal '''
+    
     # Create Instance of the Optimization Problem
     opti = cs.Opti()
     
@@ -116,7 +131,7 @@ def MultiStageOptimization(process_model,ref):
                                            process_model.RefTrajectoryParams)
     
     # Number of time steps
-    N = ref['data'].shape[0]
+    N = target.shape[0]
     
     # Create decision variables for states
     X = opti.variable(N,process_model.NumStates)
@@ -167,7 +182,7 @@ def MultiStageOptimization(process_model,ref):
     #     opti.set_initial(model.Maschinenparameter_opti[key],CurrentParams[key])      
     
     # Define Loss Function    
-    opti.minimize(sumsqr(X-ref['data']))
+    opti.minimize(cs.sumsqr(X-ref['data']))
     
     #Choose solver
     opti.solver('ipopt')

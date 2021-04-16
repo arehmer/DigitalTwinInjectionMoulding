@@ -21,12 +21,8 @@ class ProcessModel():
         
         self.NumStates = None
         
-        self.Fuehrungsparameter = {}
-        self.Führungsgrößen = {}
-        
+        self.switching_points = None
         self.RefTrajectoryParams = None
-        # self.RefParamsPress = None
-        # self.RefParamsCool = None
         
         self.RefTrajectoryInject = None
         self.RefTrajectoryPress = None
@@ -35,6 +31,12 @@ class ProcessModel():
         self.ModelInject = None
         self.ModelPress = None
         self.ModelCool = None
+        
+        self.reference = None
+        self.ref_params = None       
+        self.subsystems = None
+        self.switching_instances = None
+        
         
     # def ControlInput(self,opti_vars,k):
     #     """
@@ -64,7 +66,7 @@ class Part():
         self.NumStates = None
        
         self.ModelQuality = None
-        self.ModelParamsQuality = {}    
+        self.ModelParamsQuality = {}
 
 class LinearSSM():
     """
