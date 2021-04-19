@@ -53,16 +53,19 @@ from .common import OptimValues_to_dict
                           
 #     return x_new
 
-def ControlInput(ref_trajectories,opti_vars,k):
+def ControlInput(reference,opti_vars,k):
     """
     Übersetzt durch Maschinenparameter parametrierte
     Führungsgrößenverläufe in optimierbare control inputs
     """
     
-    control = []
+    if reference == []:
+        return []
             
-    for key in ref_trajectories.keys():
-        control.append(ref_trajectories[key](opti_vars,k))
+    control = []
+    
+    for ref in reference:
+        control.append(ref(opti_vars,k))
     
     control = cs.vcat(control)
 
@@ -112,77 +115,66 @@ def MultiStageOptimization(process_model,target):
     switching_instances = process_model.switching_instances
     reference = process_model.reference
     ref_params = process_model.ref_params
-
     
-    # Plausibility Check
+    output_dims = [sys.dim_out for sys in subsystems]
+    
+    # Plausibility and Dimension Checks
     if len(subsystems) != len(reference):
-        print('Number of Subsystems does not equal number of reference signals \
-              to be optmized!')
-    if len(switching_instances) != len(subsystems)-1:
-        print('Number of switching instances does not fit number of Subsystems!')    
-        
-        ''' Check if dimension of subsystem outputs is equal '''
+        print('Number of Subsystems does not equal number of reference signals to be optmized!')
+    elif len(switching_instances) != len(subsystems)-1:
+        print('Number of switching instances does not fit number of Subsystems!')
+    elif output_dims.count(output_dims[0]) != len(subsystems)*output_dims[0]:
+        print('All Subsystems need to have the same output dimension')        
     
+        
     # Create Instance of the Optimization Problem
     opti = cs.Opti()
     
     # Translate Maschinenparameter into opti.variables
-    ref_params_opti = CreateOptimVariables(opti, 
-                                           process_model.RefTrajectoryParams)
+    ref_params_opti = CreateOptimVariables(opti, ref_params)
     
     # Number of time steps
     N = target.shape[0]
     
     # Create decision variables for states
-    X = opti.variable(N,process_model.NumStates)
+    X = opti.variable(N,output_dims[0])
         
     # Initial Constraints
-    opti.subject_to(X[0]==ref['data'][0])
+    opti.subject_to(X[0]==target[0])
     
+    # Generate an index vector pointing to the active subsystem in each time step
+    active_subsystem = np.zeros(N,np.int8)
+
+    for switch in switching_instances:
+        active_subsystem[switch::] = active_subsystem[switch::]+1
     
     # System Dynamics as Path Constraints
     for k in range(N-1):
         
-        if k<=ref['Umschaltpunkt']:
-            U = ControlInput(process_model.RefTrajectoryInject,
-                             ref_params_opti,k)
+        U = ControlInput(reference[active_subsystem[k]],ref_params_opti,k)    
+        opti.subject_to(subsystems[active_subsystem[k]].OneStepPrediction(X[k],U)==X[k+1])
             
-            # opti.subject_to(SimulateModel(process_model.ModelInject,X[k],U)==X[k+1])
-            opti.subject_to(
-                process_model.ModelInject.OneStepPrediction(X[k],U)==X[k+1])
-            
-        elif k>ref['Umschaltpunkt']:
-            U = ControlInput(process_model.RefTrajectoryPress,
-                             ref_params_opti,k)
-            # opti.subject_to(SimulateModel(process_model.ModelPress,X[k],U)==X[k+1])
-            
-            opti.subject_to(
-                process_model.ModelPress.OneStepPrediction(X[k],U)==X[k+1])            
-
-
-        else:
-             U=None # HIER MUSS EIN MODELL FÜR DIE ABKÜHLPHASE HIN
-    
-    ''' Further Path Constraints (to avoid values that might damage the machine or in 
-    other ways harmful or unrealistic) '''
+    ''' Further Path Constraints (to avoid values that might damage the 
+    machine or are in other ways harmful or unrealistic) '''
     
     # TO DO #
     
     
-    # Final constraint
-    opti.subject_to(X[-1]==ref['data'][-1])
+    ''' Final constraint might make solution infeasible, search for methods
+    of relaxation''' 
+    # opti.subject_to(X[-1]==target[-1])
     
     
     # Set initial values for Machine Parameters
     for key in ref_params_opti:
-        opti.set_initial(ref_params_opti[key],process_model.RefTrajectoryParams[key])
+        opti.set_initial(ref_params_opti[key],ref_params[key])
 
     # Set initial values for state trajectory ??
     # for key in model.Maschinenparameter_opti:
     #     opti.set_initial(model.Maschinenparameter_opti[key],CurrentParams[key])      
     
     # Define Loss Function    
-    opti.minimize(cs.sumsqr(X-ref['data']))
+    opti.minimize(cs.sumsqr(X-target))
     
     #Choose solver
     opti.solver('ipopt')

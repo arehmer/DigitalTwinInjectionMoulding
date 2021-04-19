@@ -21,21 +21,21 @@ class ProcessModel():
         
         self.NumStates = None
         
-        self.switching_points = None
-        self.RefTrajectoryParams = None
+        # self.switching_points = None
+        # self.RefTrajectoryParams = None
         
-        self.RefTrajectoryInject = None
-        self.RefTrajectoryPress = None
-        self.RefTrajectoryCool = None 
+        # self.RefTrajectoryInject = None
+        # self.RefTrajectoryPress = None
+        # self.RefTrajectoryCool = None 
 
-        self.ModelInject = None
-        self.ModelPress = None
-        self.ModelCool = None
+        # self.ModelInject = None
+        # self.ModelPress = None
+        # self.ModelCool = None
         
-        self.reference = None
-        self.ref_params = None       
-        self.subsystems = None
-        self.switching_instances = None
+        self.reference = []
+        self.ref_params = {}       
+        self.subsystems = []
+        self.switching_instances = []
         
         
     # def ControlInput(self,opti_vars,k):

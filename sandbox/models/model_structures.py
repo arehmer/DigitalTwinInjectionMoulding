@@ -2,10 +2,12 @@
 
 # from sys import path
 # path.append(r"C:\Users\LocalAdmin\Documents\casadi-windows-py38-v3.5.5-64bit")
-
+# import os
+# print (os.getcwd())
 import casadi as cs
 import matplotlib.pyplot as plt
 import numpy as np
+from optim.common import RK4
 
 # from miscellaneous import *
 
@@ -25,45 +27,45 @@ class LinearSSM():
         self.Initialize()
 
     def Initialize(self):
-            
-            # For convenience of notation
-            dim_u = self.dim_u
-            dim_x = self.dim_x 
-            dim_y = self.dim_y             
-            name = self.name
-            
-            # Define input, state and output vector
-            u = cs.MX.sym('u',dim_u,1)
-            x = cs.MX.sym('x',dim_x,1)
-            y = cs.MX.sym('y',dim_y,1)
-            
-            # Define Model Parameters
-            A = cs.MX.sym('A',dim_x,dim_x)
-            B = cs.MX.sym('B',dim_x,dim_u)
-            C = cs.MX.sym('C',dim_y,dim_x)
-
-            
-            # Put all Parameters in Dictionary with random initialization
-            self.Parameters = {'A':np.random.rand(dim_x,dim_x),
-                               'B':np.random.rand(dim_x,dim_u),
-                               'C':np.random.rand(dim_y,dim_x)}
+                    
+        # For convenience of notation
+        dim_u = self.dim_u
+        dim_x = self.dim_x 
+        dim_y = self.dim_y             
+        name = self.name
         
-            # self.Input = {'u':np.random.rand(u.shape)}
-            
-            # Define Model Equations
-            x_new = cs.mtimes(A,x) + cs.mtimes(B,u)
-            y_new = cs.mtimes(C,x_new) 
-            
-            
-            input = [x,u,A,B,C]
-            input_names = ['x','u','A','B','C']
-            
-            output = [x_new,y_new]
-            output_names = ['x_new','y_new']  
-            
-            self.Function = cs.Function(name, input, output, input_names,output_names)
-            
-            return None
+        # Define input, state and output vector
+        u = cs.MX.sym('u',dim_u,1)
+        x = cs.MX.sym('x',dim_x,1)
+        y = cs.MX.sym('y',dim_y,1)
+        
+        # Define Model Parameters
+        A = cs.MX.sym('A',dim_x,dim_x)
+        B = cs.MX.sym('B',dim_x,dim_u)
+        C = cs.MX.sym('C',dim_y,dim_x)
+
+        
+        # Put all Parameters in Dictionary with random initialization
+        self.Parameters = {'A':np.random.rand(dim_x,dim_x),
+                           'B':np.random.rand(dim_x,dim_u),
+                           'C':np.random.rand(dim_y,dim_x)}
+    
+        # self.Input = {'u':np.random.rand(u.shape)}
+        
+        # Define Model Equations
+        x_new = cs.mtimes(A,x) + cs.mtimes(B,u)
+        y_new = cs.mtimes(C,x_new) 
+        
+        
+        input = [x,u,A,B,C]
+        input_names = ['x','u','A','B','C']
+        
+        output = [x_new,y_new]
+        output_names = ['x_new','y_new']  
+        
+        self.Function = cs.Function(name, input, output, input_names,output_names)
+        
+        return None
    
     def OneStepPrediction(self,x0,u0,params=None):
         '''
@@ -126,7 +128,7 @@ class MLP():
     Implementation of a single-layered Feedforward Neural Network.
     """
 
-    def __init__(self,dim_u,dim_x,dim_hidden,name):
+    def __init__(self,dim_u,dim_out,dim_hidden,name):
         """
         Initialization procedure of the Feedforward Neural Network Architecture
         
@@ -135,8 +137,8 @@ class MLP():
         ----------
         dim_u : int
             Dimension of the input, e.g. dim_u = 2 if input is a 2x1 vector
-        dim_x : int
-            Dimension of the state, e.g. dim_x = 3 if state is a 3x1 vector.
+        dim_out : int
+            Dimension of the output, e.g. dim_out = 3 if output is a 3x1 vector.
         dim_hidden : int
             Number of nonlinear neurons in the hidden layer, e.g. dim_hidden=10,
             if NN is supposed to have 10 neurons in hidden layer.
@@ -150,7 +152,7 @@ class MLP():
         """
         self.dim_u = dim_u
         self.dim_hidden = dim_hidden
-        self.dim_x = dim_x
+        self.dim_out = dim_out
         self.name = name
         
         self.Initialize()
@@ -168,18 +170,18 @@ class MLP():
         """   
         dim_u = self.dim_u
         dim_hidden = self.dim_hidden
-        dim_x = self.dim_x 
+        dim_out = self.dim_out 
         name = self.name
     
         u = cs.MX.sym('u',dim_u,1)
-        x = cs.MX.sym('x',dim_x,1)
+        x = cs.MX.sym('x',dim_out,1)
         
         # Model Parameters
-        W_h = cs.MX.sym('W_h',dim_hidden,dim_u+dim_x)
+        W_h = cs.MX.sym('W_h',dim_hidden,dim_u+dim_out)
         b_h = cs.MX.sym('b_h',dim_hidden,1)
         
-        W_o = cs.MX.sym('W_out',dim_x,dim_hidden)
-        b_o = cs.MX.sym('b_out',dim_x,1)
+        W_o = cs.MX.sym('W_out',dim_out,dim_hidden)
+        b_o = cs.MX.sym('b_out',dim_out,1)
         
         # Put all Parameters in Dictionary with random initialization
         self.Parameters = {'W_h':np.random.rand(W_h.shape[0],W_h.shape[1]),
@@ -255,8 +257,8 @@ class MLP():
 
         Parameters
         ----------
-        x0 : array-like with dimension [self.dim_x, 1]
-            initial state resp
+        x0 : array-like with dimension [self.dim_out, 1]
+            initial output
         u : array-like with dimension [N,self.dim_u]
             trajectory of input signal with length N
         params : dictionary, optional
@@ -264,7 +266,7 @@ class MLP():
 
         Returns
         -------
-        x : array-like with dimension [N+1,self.dim_x]
+        x : array-like with dimension [N+1,self.dim_out]
             trajectory of output signal with length N+1 
             
         """
@@ -292,6 +294,7 @@ def logistic(x):
     return y
 
 class GRU():
+    
     """
     Implementation of a Gated Recurrent Unit with a Feedforward Neural Network
     as output
@@ -497,3 +500,108 @@ class GRU():
         x = cs.hcat(x).T
         
         return x[-1]
+    
+    
+class FirstOrderSystem():
+    """
+    
+    """
+
+    def __init__(self,dt,name):
+        
+        self.name = name
+        self.dt = dt
+        
+        self.dim_out = 1
+        
+        self.Initialize()
+
+    def Initialize(self):
+            
+            # For convenience of notation
+            name = self.name
+            dt = self.dt
+            # Define input, state and output vector
+            u = cs.MX.sym('u',1,1)
+            x = cs.MX.sym('x',1,1)
+            
+            # Define Model Parameters
+            a = cs.MX.sym('a',1,1)
+            b = cs.MX.sym('b',1,1)
+            
+            # Put all Parameters in Dictionary with random initialization
+            self.Parameters = {'a':np.random.rand(1,1),
+                               'b':np.random.rand(1,1)}
+        
+            # continuous dynamics
+            x_new = a*x + b*u
+
+            input = [x,u,a,b]
+            input_names = ['x','u','a','b']
+            
+            output = [x_new]
+            output_names = ['x_new']  
+
+            f_cont = cs.Function(name,input,output,
+                                 input_names,output_names)  
+            
+            x1 = RK4(f_cont,input,dt)
+          
+            
+            self.Function = cs.Function(name,input,[x1],input_names,output_names)
+            
+            return None
+   
+    def OneStepPrediction(self,x0,u0,params=None):
+        '''
+        Estimates the next state and output from current state and input
+        x0: Casadi MX, current state
+        u0: Casadi MX, current input
+        params: A dictionary of opti variables, if the parameters of the model
+                should be optimized, if None, then the current parameters of
+                the model are used
+        '''
+        
+        if params==None:
+            params = self.Parameters
+        
+        params_new = []
+            
+        for name in  self.Function.name_in():
+            try:
+                params_new.append(params[name])                      # Parameters are already in the right order as expected by Casadi Function
+            except:
+                continue
+        
+        x1 = self.Function(x0,u0,*params_new)     
+                              
+        return x1
+   
+    def Simulation(self,x0,u,params=None):
+        '''
+        A iterative application of the OneStepPrediction in order to perform a
+        simulation for a whole input trajectory
+        x0: Casadi MX, inital state a begin of simulation
+        u: Casadi MX,  input trajectory
+        params: A dictionary of opti variables, if the parameters of the model
+                should be optimized, if None, then the current parameters of
+                the model are used
+        '''
+
+        x = []
+
+        # initial states
+        x.append(x0)
+                      
+        # Simulate Model
+        for k in range(u.shape[0]):
+            x_new = self.OneStepPrediction(x[k],u[[k],:],params)
+            x.append(x_new)
+        
+
+        # Concatenate list to casadiMX
+  
+        x = cs.hcat(x).T
+
+       
+        return x
