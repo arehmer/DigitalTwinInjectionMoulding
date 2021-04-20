@@ -12,17 +12,18 @@ Created on Mon Apr 19 12:48:12 2021
 import numpy as np
 import matplotlib.pyplot as plt
 
-from models.NN import FirstOrderSystem
+from models.model_structures import SecondOrderSystem
 
 N = 100
 
 u = np.ones((N,1))
 
-PT1 = FirstOrderSystem(1,'injection_model')
-PT1.Parameters['a']=-0.1
+PT2 = SecondOrderSystem(1,'injection_model')
+PT2.Parameters['A']=np.array([[0,1],[-1,-1]])
+PT2.Parameters['b']=np.array([[0],[1]])
+PT2.Parameters['c']=np.array([[1,0]])
 
-
-y_sim = PT1.Simulation(np.array([[0]]), u)
+x_sim,y_sim = PT2.Simulation(np.array([[0],[0]]), u)
 
 y_sim = np.array(y_sim)
 

@@ -512,6 +512,7 @@ class FirstOrderSystem():
         self.name = name
         self.dt = dt
         
+        self.dim_u = 1
         self.dim_out = 1
         
         self.Initialize()
@@ -521,6 +522,10 @@ class FirstOrderSystem():
             # For convenience of notation
             name = self.name
             dt = self.dt
+            dim_u = self.dim_u
+            dim_out = self.dim_out
+            
+            
             # Define input, state and output vector
             u = cs.MX.sym('u',1,1)
             x = cs.MX.sym('x',1,1)
@@ -605,3 +610,114 @@ class FirstOrderSystem():
 
        
         return x
+    
+class SecondOrderSystem():
+    """
+    
+    """
+
+    def __init__(self,dt,name):
+        
+        self.name = name
+        self.dt = dt
+        
+        self.dim_u = 1
+        self.dim_out = 1
+        
+        self.Initialize()
+
+    def Initialize(self):
+            
+            # For convenience of notation
+            name = self.name
+            dt = self.dt
+            dim_u = self.dim_u
+            dim_out = self.dim_out
+            
+            # Define input, state and output vector
+            u = cs.MX.sym('u',dim_u,1)
+            x = cs.MX.sym('x',2,1)
+            
+            # Define Model Parameters
+            A = cs.MX.sym('A',2,2)
+            b = cs.MX.sym('b',2,1)
+            c = cs.MX.sym('c',1,2)
+            
+            # Put all Parameters in Dictionary with random initialization
+            self.Parameters = {'A':np.random.rand(2,2),
+                               'b':np.random.rand(2,dim_u),
+                               'c':np.random.rand(dim_out,2)}
+        
+            # continuous dynamics
+            x_new = cs.mtimes(A,x) + cs.mtimes(b,u)
+
+            input = [x,u,A,b,c]
+            input_names = ['x','u','A','b','c']
+            
+            output = [x_new]
+            output_names = ['x_new']  
+
+            f_cont = cs.Function(name,input,output,
+                                 input_names,output_names)  
+            
+            x1 = RK4(f_cont,input,dt)
+            y1 = cs.mtimes(c,x1)
+            
+            self.Function = cs.Function(name,input,[x1,y1],input_names,['x_new','y_new'])
+            
+            return None
+   
+    def OneStepPrediction(self,x0,u0,params=None):
+        '''
+        Estimates the next state and output from current state and input
+        x0: Casadi MX, current state
+        u0: Casadi MX, current input
+        params: A dictionary of opti variables, if the parameters of the model
+                should be optimized, if None, then the current parameters of
+                the model are used
+        '''
+        
+        if params==None:
+            params = self.Parameters
+        
+        params_new = []
+            
+        for name in  self.Function.name_in():
+            try:
+                params_new.append(params[name])                      # Parameters are already in the right order as expected by Casadi Function
+            except:
+                continue
+        
+        x1,y1 = self.Function(x0,u0,*params_new)     
+                              
+        return x1,y1
+   
+    def Simulation(self,x0,u,params=None):
+        '''
+        A iterative application of the OneStepPrediction in order to perform a
+        simulation for a whole input trajectory
+        x0: Casadi MX, inital state a begin of simulation
+        u: Casadi MX,  input trajectory
+        params: A dictionary of opti variables, if the parameters of the model
+                should be optimized, if None, then the current parameters of
+                the model are used
+        '''
+
+        x = []
+        y = []
+        
+        # initial states
+        x.append(x0)
+                      
+        # Simulate Model
+        for k in range(u.shape[0]):
+            x_new,y_new = self.OneStepPrediction(x[k],u[[k],:],params)
+            x.append(x_new)
+            y.append(y_new)
+
+        # Concatenate list to casadiMX
+  
+        x = cs.hcat(x).T
+        y = cs.hcat(y).T
+       
+        return x,y

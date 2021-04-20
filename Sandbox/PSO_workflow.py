@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from models.model_structures import MLP
+from models.NN import MLP
 from optim.param_optim import HyperParameterPSO,ModelParameterEstimation,ModelTraining
 
 # from miscellaneous import *
@@ -39,26 +39,16 @@ data = {'u_train':u[0:8], 'y_train':x[0:8],'init_state_train': init_state[0:8],
 
 ''' Estimate MLP model for first phase '''
 # Initialize Model
-model = MLP(dim_u=2,dim_out=2,dim_hidden=10,name='Inject')
+model = MLP(dim_u=2,dim_x=2,dim_hidden=10,name='Inject')
 # y = model.Simulation(data['init_state_train'][0],data['u_train'][0])
 # model = Model.LinearSSM(dim_u=2,dim_x=2,dim_y=2,name='Inject')
 s_opts = {"max_iter": 1000, "print_level":0}
 # y = model.Simulation(data['init_state_train'][0],data['u_train'][0])
 # identified_parameters = ModelParameterEstimation(model,data,p_opts=None,s_opts=s_opts)
 
-# identification_results = ModelTraining(model,data,initializations = 5)
+identification_results = ModelTraining(model,data,initializations = 5)
 
-# model.Parameters = identified_parameters
-
-param_bounds = {'dim_hidden':np.array([5,20])}
-options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
-n_particles = 5
-initializations = 2
-s_opts = {"max_iter": 100, "print_level":0}
-
-results_inject = HyperParameterPSO(model,data,param_bounds,n_particles,
-                            options,initializations,p_opts=None,s_opts=s_opts)
-
+model.Parameters = identified_parameters
 
 x0_train = data['init_state_train'][0]
 u_train =  data['u_train'][0]
@@ -73,9 +63,16 @@ plt.plot(y_train-y_est_train,label='Simulation Error')                          
 plt.legend()
 plt.show()
 
+"""
+param_bounds = {'dim_hidden':np.array([5,20])}
+options = {'c1': 0.6, 'c2': 0.3, 'w': 0.4, 'k':5, 'p':1}
+n_particles = 5
+initializations = 2
+s_opts = {"max_iter": 100, "print_level":0}
 
-
-
+results_inject = HyperParameterPSO(model,data,param_bounds,n_particles,
+                            options,initializations,p_opts=None,s_opts=s_opts)
+"""
 # model.dim_hidden = 6
 # model.Initialize()
 # model.Parameters = results_inject.loc[6,'model_params']

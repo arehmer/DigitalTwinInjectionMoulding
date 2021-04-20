@@ -151,8 +151,19 @@ def MultiStageOptimization(process_model,target):
     # System Dynamics as Path Constraints
     for k in range(N-1):
         
-        U = ControlInput(reference[active_subsystem[k]],ref_params_opti,k)    
-        opti.subject_to(subsystems[active_subsystem[k]].OneStepPrediction(X[k],U)==X[k+1])
+        # Control input at every time step is a function of the parameters of
+        # the reference trajectories 
+        U = ControlInput(reference[active_subsystem[k]],ref_params_opti,k)
+        
+        # Do a one step prediction based on the model
+        pred = subsystems[active_subsystem[k]].OneStepPrediction(X[k],U)
+        
+        # OneStepPrediction can return a tuple, i.e. state and output. The 
+        # output is per convention the second entry
+        if isinstance(pred,tuple):
+            pred = pred[1]
+        
+        opti.subject_to(pred==X[k+1])
             
     ''' Further Path Constraints (to avoid values that might damage the 
     machine or are in other ways harmful or unrealistic) '''

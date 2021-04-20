@@ -17,9 +17,12 @@ ProcessModel = injection_molding.ProcessModel()
 ''' Assume subsystems are first order systems for demonstration purposes '''
 dt = 1
 
-injection_model = model_structures.FirstOrderSystem(dt,'injection_model')
-injection_model.Parameters['a']=-0.9
-injection_model.Parameters['b']=1
+# injection_model = model_structures.FirstOrderSystem(dt,'injection_model')
+# injection_model.Parameters['a']=-0.9
+# injection_model.Parameters['b']=1
+
+injection_model = model_structures.SecondOrderSystem(dt,'injection_model')
+injection_model.Parameters={'A':np.array([[0,1],[-1,-1]]),'b':np.array([[0],[1]]),'c':np.array([[1,0]])}
 
 packing_model = model_structures.FirstOrderSystem(dt,'packing_model')
 packing_model.Parameters['a']=-0.1
@@ -34,20 +37,42 @@ ProcessModel.subsystems = [injection_model,packing_model,cooling_model]
 
 ''' Define reference as lambda functions'''
 
-W1 = lambda param,k: param['h1']+(param['h2']-param['h1'])/(1+cs.exp(-2*(k-param['T1'])))
-W2 = lambda param,k: param['h3']+(param['h4']-param['h3'])/(1+cs.exp(-2*(k-param['T2'])))
+# W1 = lambda param,k: param['h1']+(param['h2']-param['h1'])/(1+np.exp(-2*(k-param['T1'])))
+# W2 = lambda param,k: param['h3']+(param['h4']-param['h3'])/(1+np.exp(-2*(k-param['T2'])))
+
+
+
+# h1 = np.array([[0]])
+# h2 = np.array([[2]])
+# T1 = np.array([[30]])
+# h3 = np.array([[0]])
+# h4 = np.array([[8]])
+# T2 = np.array([[120]])
+
+# ProcessModel.ref_params = {'h1': h1, 'h2': h2, 'T1': T1,'h3': h3, 
+#                                     'h4': h4, 'T2': T2}
+
+
+W1 = lambda p,k: p['h1']+(p['h2']-p['h1'])/(1+np.exp(-2*(k-p['T1']))) + p['h2']+(p['h3']-p['h2'])/(1+np.exp(-2*(k-p['T2'])))
+W2 = lambda p,k: p['h4']+(p['h5']-p['h4'])/(1+np.exp(-2*(k-p['T3'])))
 
 ProcessModel.reference = [[W1],[W2],[]]
 
-h1 = np.array([[0]])
-h2 = np.array([[2]])
-T1 = np.array([[30]])
-h3 = np.array([[0]])
-h4 = np.array([[8]])
-T2 = np.array([[120]])
+params = {'h1':np.array([[0]]),
+          'h2':np.array([[5]]),
+          'h3':np.array([[3]]),
+          'T1':np.array([[10]]),
+          'T2':np.array([[40]]),
+          'h4':np.array([[6]]),
+          'h5':np.array([[1]]),
+          'T3':np.array([[80]])}
 
-ProcessModel.ref_params = {'h1': h1, 'h2': h2, 'T1': T1,'h3': h3, 
-                                    'h4': h4, 'T2': T2}
+
+ProcessModel.ref_params = params
+
+
+
+
 
 ''' Define switching instances between subsystems '''
 ProcessModel.switching_instances = [40,120]
@@ -57,7 +82,16 @@ ProcessModel.switching_instances = [40,120]
 ''' Define an (in this case) arbitrary desired target trajectory '''
 N=150
 
-target = cs.sin(np.linspace(0,3*np.pi,N))
+# target = cs.sin(np.linspace(0,3*np.pi,N))
+
+
+target = np.zeros((N,1))
+target[0:20]=2
+target[20:40]=6
+target[40:80]=4
+target[80:100]=4
+target[100:120]=2
+target[120:150]=0
 
 values = MultiStageOptimization(ProcessModel,target)
 

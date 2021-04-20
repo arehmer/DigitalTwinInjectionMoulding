@@ -191,6 +191,7 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
 
     """
     
+    path = 'temp/PSO_param/'
     
     # Formulate Particle Swarm Optimization Problem
     dimensions_discrete = len(param_bounds.keys())
@@ -209,7 +210,7 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
                                      options, bounds)
 
     # Make a directory and file for intermediate results 
-    os.mkdir(model.name)
+    os.makedirs(path+model.name)
 
     for key in param_bounds.keys():
         param_bounds[key] = np.arange(param_bounds[key][0],
@@ -221,7 +222,7 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
     
     hist = pd.DataFrame(index = index, columns=['cost','model_params'])    
     
-    pkl.dump(hist, open(model.name +'/' + 'HyperParamPSO_hist.pkl','wb'))
+    pkl.dump(hist, open(path + model.name +'/' + 'HyperParamPSO_hist.pkl','wb'))
     
     # Define arguments to be passed to vost function
     cost_func_kwargs = {'model': model,
@@ -230,31 +231,17 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
                         'dimensions_discrete': dimensions_discrete,
                         'initializations':initializations,
                         'p_opts': p_opts,
-                        's_opts': s_opts}
+                        's_opts': s_opts,
+                        'path':path}
     
     # Create Cost function
     def PSO_cost_function(swarm_position,**kwargs):
         
         # Load training history to avoid calculating stuff muliple times
-        hist = pkl.load(open(model.name +'/' + 'HyperParamPSO_hist.pkl',
-                                 'rb'))
+        hist = pkl.load(open(path+ model.name +'/' +
+                             'HyperParamPSO_hist.pkl','rb'))
             
-        # except:
-            
-        #     os.mkdir(model.name)
-            
-        #     # If history of training data does not exist, create empty pandas
-        #     # dataframe
-        #     for key in param_bounds.keys():
-        #         param_bounds[key] = np.arange(param_bounds[key][0],
-        #                                       param_bounds[key][1]+1,
-        #                                       dtype = int)
-            
-        #     index = pd.MultiIndex.from_product(param_bounds.values(),
-        #                                        names=param_bounds.keys())
-            
-        #     hist = pd.DataFrame(index = index, columns=['cost','model_params'])
-        
+       
         # Initialize empty array for costs
         cost = np.zeros((n_particles,1))
     
@@ -281,9 +268,9 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
                 # Save all results of this particle in a file somewhere so that
                 # the nonlinear optimization does not have to be done again
                 
-                pkl.dump(results, open(model.name +'/' + 'particle' + 
-                                    str(swarm_position[particle]) + '.pkl',
-                                    'wb'))
+                pkl.dump(results, open(path + model.name +'/' + 'particle' + 
+                                       str(swarm_position[particle]) + '.pkl',
+                                       'wb'))
                 
                 # calculate best performance over all initializations
                 cost[particle] = results.loss.min()
@@ -297,8 +284,8 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
                 [results.loc[idx_min,'params']]
                 
                 # Save DataFrame to File
-                pkl.dump(hist, open(model.name +'/' + 'HyperParamPSO_hist.pkl'
-                                    ,'wb'))
+                pkl.dump(hist, open(path + model.name +'/' +
+                                    'HyperParamPSO_hist.pkl','wb'))
                 
             else:
                 cost[particle] = hist.loc[idx].cost.item()
@@ -314,10 +301,10 @@ def HyperParameterPSO(model,data,param_bounds,n_particles,options,
     PSO_problem.optimize(PSO_cost_function, iters=100, **cost_func_kwargs)
     
     # Load intermediate results
-    hist = pkl.load(open(model.name +'/' + 'HyperParamPSO_hist.pkl','rb'))
+    hist = pkl.load(open(path + model.name +'/' + 'HyperParamPSO_hist.pkl','rb'))
     
     # Delete file with intermediate results
-    os.remove(model.name +'/' + 'HyperParamPSO_hist.pkl')
+    # os.remove(path + model.name +'/' + 'HyperParamPSO_hist.pkl')
     
     return hist
 
