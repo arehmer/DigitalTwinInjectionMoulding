@@ -1,6 +1,0 @@
-https://arxiv.org/pdf/1707.00284.pdf
-https://link.springer.com/book/10.1007%2F978-3-8348-8202-8
-https://www.syscop.de/files/2020ss/NOC/book-NOCSE.pdf
-Betts, J., Practical Methods for Optimal Control and Estimation Using Nonlinear Programming, SIAM, 2010
-https://www.syscop.de/teaching/ws2020/numerical-optimization
-
